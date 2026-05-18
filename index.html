@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Best Exchange Rates – Asunción</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 min-h-flex flex-col items-center p-6">
+  <h1 class="text-2xl font-bold mb-4">Tassi di cambio migliori a Asunción</h1>
+
+  <div class="flex flex-col sm:flex-row gap-4 w-full max-w-xl">
+    <select id="currencySelect" class="border rounded px-3 py-2 w-full sm:w-auto">
+      <option value="USD">USD</option>
+      <option value="EUR">EUR</option>
+      <option value="ARS">ARS</option>
+      <option value="BRL">BRL</option>
+    </select>
+    <button id="fetchBtn"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+      Aggiorna tassi
+    </button>
+  </div>
+
+  <p id="status" class="mt-2 text-sm text-gray-600"></p>
+
+  <table id="ratesTable"
+         class="mt-4 w-full max-w-xl border-collapse border border-gray-300"
+         hidden>
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="border px-4 py-2 text-left">Fonte</th>
+        <th class="border px-4 py-2 text-left">Acquisto</th>
+        <th class="border px-4 py-2 text-left">Vendita</th>
+        <th class="border px-4 py-2 text-left">Aggiornato</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="script.js"></script>
+</body>
+</html>
