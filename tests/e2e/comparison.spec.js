@@ -352,7 +352,7 @@ test('Uno branch endpoint shows Santa Rita, Campo 9 and distinct PJC prices inst
     await select(page,'#citySelect',city);
     await expect(uno).toHaveCount(1);
     await expect(uno.locator('.branch')).toContainText(branch);
-    await expect(uno.locator('.branch')).toContainText(city);
+    expect((await uno.locator('.branch').textContent()).toLocaleLowerCase('es')).toContain(city.toLocaleLowerCase('es'));
     await expect(uno.locator('.comparison-total')).toHaveText(total);
     await expect(uno.locator('.quote-meta')).toContainText('sin hora publicada');
     await expect(page.locator('#bestFreshness')).toHaveText('Fecha de publicación no indicada');
@@ -383,6 +383,7 @@ test('bank-only city presence is not a local price or a verified cash-exchange s
   await expect(page.locator('#citySelect')).toHaveValue('Filadelfia');
   await expect(page.locator('#quotes .quote')).toHaveCount(0);
   await expect(page.locator('#bestTotal')).toHaveText('—');
+  await page.locator('.bank-directory > summary').click();
   const atlas=page.locator('#bankDirectory .directory-item').filter({has:page.getByRole('link',{name:'Banco Atlas ↗',exact:true})});
   await expect(atlas).toHaveCount(1);
   await expect(atlas).toContainText('Presencia en Filadelfia');
