@@ -50,13 +50,16 @@ test('HTTP and parse errors remain rejections', async () => {
   await assert.rejects(fetchSource(SOURCES[0],'USD',{fetcher:async()=>({ok:true,text:async()=>'empty'})}));
 });
 
-test('currency pages require exact currency and Asunción branch', () => {
+test('currency pages require exact currency and verified city rows', () => {
   for (const [currency,buy,sell] of [['USD',5650,5750],['EUR',6300,6550],['BRL',1115,1155],['ARS',3.4,3.8]]) {
     const text = readFileSync(new URL(`./fixtures/norte-${currency.toLowerCase()}-2026-10-20.md`,import.meta.url),'utf8');
-    const [quote] = parseNorteCurrency(text,currency);
+    const rows = parseNorteCurrency(text,currency);
+    const quote = rows.find(row=>row.city==='Asunción');
+    assert.equal(rows.length,7);
     assert.equal(quote.branch,'Asunción'); assert.equal(quote.buy,buy); assert.equal(quote.sell,sell);
     assert.throws(()=>parseNorteCurrency(text,currency === 'USD' ? 'EUR' : 'USD')); 
-    assert.throws(()=>parseNorteCurrency(text.replaceAll('Asunción','Other city'),currency));
+    assert.equal(parseNorteCurrency(text.replaceAll('Asunción','Other city'),currency).some(row=>row.city==='Other city'),false);
+    assert.throws(()=>parseNorteCurrency(text.replace('| [Asunción]', '| [Pedro Juan Caballero]'),currency));
   }
 });
 

@@ -10,6 +10,7 @@ test('UI: four currencies, buy/sell, invalid input, interrupted requests, failur
   globalThis.document=dom.window.document; globalThis.Option=dom.window.Option;
   let fail = false, delay = false;
   globalThis.fetch = async (url, {signal}) => {
+    if (!url.includes('nortecambios')) return {ok:false,status:503};
     const currency = url.split('/').pop();
     if (delay && currency === 'EUR') await new Promise(resolve=>setTimeout(resolve,150));
     if (signal.aborted) throw new Error('Aborted');
@@ -28,13 +29,18 @@ test('UI: four currencies, buy/sell, invalid input, interrupted requests, failur
     for (const [currency,total] of [['EUR','₲ 655.000'],['BRL','₲ 115.500'],['ARS','₲ 380']]) {change('currencySelect',currency,'change'); await settle(done); assert.equal($('result').textContent,total);}
     delay=true; change('currencySelect','EUR','change'); change('currencySelect','USD','change'); await settle(done); await new Promise(resolve=>setTimeout(resolve,200));
     assert.equal($('result').textContent,'₲ 575.000'); assert.match($('calculationDetail').textContent,/USD/);
+    change('citySelect','Ciudad del Este','change'); await settle(done); assert.equal($('result').textContent,'₲ 573.000');
+    assert.equal($('quotes').querySelector('.branch').textContent,'Ciudad del Este');
+    change('citySelect','Asunción','change'); await settle(done);
     fail=true; $('fetchBtn').click();await settle(done);
     assert.ok($('status').classList.contains('error')); assert.equal($('quotes').querySelectorAll('.previous').length,1); assert.equal($('result').textContent,'—');
+    change('citySelect','Bella Vista Norte','change');await settle(done);assert.equal($('quotes').querySelectorAll('.previous').length,0);
+    change('citySelect','Asunción','change');await settle(done);assert.equal($('quotes').querySelectorAll('.previous').length,1);
     change('quoteSelect','manual');change('manualRate','6000'); assert.equal($('result').textContent,'₲ 600.000'); assert.match($('calculationDetail').textContent,/introducida por ti.*no verificada/);
     change('manualRate','-1');assert.equal($('result').textContent,'—');
     change('manualRate','6000'); change('operation','sell'); assert.equal($('manualRate').value,''); assert.equal($('result').textContent,'—');
     change('operation','buy');
-    change('quoteSelect','');change('currencySelect','EUR','change'); await settle(done);assert.equal($('result').textContent,'—');
+    change('quoteSelect','');change('currencySelect','EUR','change'); await settle(done);$('fetchBtn').click();await settle(done);assert.equal($('result').textContent,'—');
     fail=false;delay=false; $('fetchBtn').click();await settle(done); assert.equal($('result').textContent,'₲ 655.000'); assert.ok(!$('status').classList.contains('error'));
   } finally { Object.assign(globalThis,originals);dom.window.close(); }
 });

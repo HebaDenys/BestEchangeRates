@@ -1,0 +1,74 @@
+Title: Fe Cambios S.A. - Excelencia en cambios
+
+URL Source: https://www.fecambios.com.py/
+
+Markdown Content:
+[![Image 1: Generic placeholder image](https://www.fecambios.com.py/assets/imgs/logo12.png)](https://www.fecambios.com.py/#)
+
+*   [Cotización](https://www.fecambios.com.py/#)
+*   [Nosotros](https://www.fecambios.com.py/#nosotros)
+*   [Servicios](https://www.fecambios.com.py/#servicios)
+*   [Sucursales](https://www.fecambios.com.py/#sucursales)
+*   [Cumplimiento](https://www.fecambios.com.py/#cumplimiento)
+*   [Contactos](https://www.fecambios.com.py/#contact)
+
+## COTIZACIONES DE MONEDAS
+
+Cotizaciones con carácter informativo y sujetas a cambios. Última actualización: 2026-10-19 13:53:06
+
+ASUNCIÓN - MATRIZ
+
+Teléfonos: (+595 21) 451300
+
+| MONEDA | COMPRA | VENTA |
+| --- | --- | --- |
+| [USD](https://www.fecambios.com.py/#) | 5.620 | 5.780 |
+| [BRL](https://www.fecambios.com.py/#) | 1.100 | 1.250 |
+| [EUR](https://www.fecambios.com.py/#) | 6.350 | 6.850 |
+| [ARS](https://www.fecambios.com.py/#) | 3 | 9 |
+| [USD/BRL](https://www.fecambios.com.py/#) | 0,000 | 0,000 |
+| [USD/ARS](https://www.fecambios.com.py/#) | 0,000 | 0,000 |
+| [USD/EUR](https://www.fecambios.com.py/#) | 0,000 | 0,000 |
+
+CIUDAD DEL ESTE
+
+Teléfonos: (+595 61)510731/2
+
+| MONEDA | COMPRA | VENTA |
+| --- | --- | --- |
+| [USD](https://www.fecambios.com.py/#) | 5.640 | 5.750 |
+| [BRL](https://www.fecambios.com.py/#) | 1.090 | 1.135 |
+| [EUR](https://www.fecambios.com.py/#) | 6.310 | 6.765 |
+| [ARS](https://www.fecambios.com.py/#) | 3,4 | 3,65 |
+| [USD/BRL](https://www.fecambios.com.py/#) | 5,050 | 5,150 |
+| [USD/ARS](https://www.fecambios.com.py/#) | 1.540,000 | 1.685,000 |
+| [USD/EUR](https://www.fecambios.com.py/#) | 1,123 | 1,183 |
+
+ASUNCIÓN - VILLA MORRA
+
+Teléfonos: (+595 21) 613181
+
+| MONEDA | COMPRA | VENTA |
+| --- | --- | --- |
+| [USD](https://www.fecambios.com.py/#) | 5.620 | 5.750 |
+| [BRL](https://www.fecambios.com.py/#) | 1.100 | 1.200 |
+| [EUR](https://www.fecambios.com.py/#) | 6.350 | 6.900 |
+| [ARS](https://www.fecambios.com.py/#) | 3 | 4,2 |
+| [USD/BRL](https://www.fecambios.com.py/#) | 0,000 | 0,000 |
+| [USD/ARS](https://www.fecambios.com.py/#) | 0,000 | 0,000 |
+| [USD/EUR](https://www.fecambios.com.py/#) | 0,000 | 0,000 |
+
+SAN LORENZO
+
+Teléfonos: (+595 21) 570470/1
+
+| MONEDA | COMPRA | VENTA |
+| --- | --- | --- |
+| [USD](https://www.fecambios.com.py/#) | 560 | 5.800 |
+| [BRL](https://www.fecambios.com.py/#) | 1.090 | 1.200 |
+| [EUR](https://www.fecambios.com.py/#) | 6.350 | 7.000 |
+| [ARS](https://www.fecambios.com.py/#) | 3 | 6 |
+| [USD/BRL](https://www.fecambios.com.py/#) | 0,000 | 0,000 |
+| [USD/ARS](https://www.fecambios.com.py/#) | 0,000 | 0,000 |
+| [USD/EUR](https://www.fecambios.com.py/#) | 0,000 | 0,000 |
+

@@ -1,0 +1,54 @@
+## Main Office
+
+Last update: 19/10/2026 2:13 PM
+
+| Currency | Buy | Sell | % Variation |
+| --- | --- | --- | --- |
+| ![Image 18: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)Dólar | 5.660 | 5.730 | -0,17% |
+| ![Image 19: Real](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_real.png)Real | 1.105 | 1.140 | -1,72% |
+| ![Image 20: Peso Arg.](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_peso_arg.png)Peso Arg. | 2,50 | 5,00 | -28,57% |
+| ![Image 21: Euro](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_euro.png)Euro | 6.350 | 6.900 | -6,76% |
+| ![Image 22: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)![Image 23: Real](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_real.png)Dólar x Real | 5,06 | 5,14 | +0,98% |
+| ![Image 24: Euro](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_euro.png)![Image 25: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)Euro x Dólar | 1,10 | 1,20 | -4,00% |
+
+## Saltos del Guairá Branch
+
+Last update: 19/10/2026 9:55 AM
+
+| Currency | Buy | Sell | % Variation |
+| --- | --- | --- | --- |
+| ![Image 26: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)Dólar | 5.630 | 5.740 | +0,17% |
+| ![Image 27: Real](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_real.png)Real | 1.090 | 1.130 | 0,00% |
+| ![Image 28: Peso Arg.](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_peso_arg.png)Peso Arg. | 2,00 | 5,00 | -9,09% |
+| ![Image 29: Euro](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_euro.png)Euro | 6.200 | 6.900 | -6,76% |
+| ![Image 30: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)![Image 31: Real](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_real.png)Dólar x Real | 5,07 | 5,17 | +0,39% |
+| ![Image 32: Euro](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_euro.png)![Image 33: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)Euro x Dólar | 1,11 | 1,22 | -1,61% |
+
+## Aux. Box Jebai
+
+Last update: 19/10/2026 9:21 AM
+
+| Currency | Buy | Sell | % Variation |
+| --- | --- | --- | --- |
+| ![Image 34: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)Dólar | 5.650 | 5.770 | -1,37% |
+| ![Image 35: Real](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_real.png)Real | 1.080 | 1.160 | -0,85% |
+| ![Image 36: Peso Arg.](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_peso_arg.png)Peso Arg. | 4,00 | 6,00 | 0,00% |
+| ![Image 37: Euro](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_euro.png)Euro | 7.230 | 7.815 | -12,19% |
+| ![Image 38: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)![Image 39: Real](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_real.png)Dólar x Real | 5,00 | 5,16 | -0,77% |
+| ![Image 40: Euro](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_euro.png)![Image 41: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)Euro x Dólar | 1,00 | 1,10 | -4,76% |
+
+## PJC Branch
+
+Last update: 19/10/2026 11:30 AM
+
+| Currency | Buy | Sell | % Variation |
+| --- | --- | --- | --- |
+| ![Image 42: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)Dólar | 5.640 | 5.780 | -1,53% |
+| ![Image 43: Real](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_real.png)Real | 1.100 | 1.145 | -2,14% |
+| ![Image 44: Peso Arg.](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_peso_arg.png)Peso Arg. | 2,50 | 5,50 | -8,33% |
+| ![Image 45: Euro](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_euro.png)Euro | 6.450 | 7.050 | -2,76% |
+| ![Image 46: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)![Image 47: Real](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_real.png)Dólar x Real | 5,04 | 5,15 | -1,34% |
+| ![Image 48: Euro](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_euro.png)![Image 49: Dólar](https://www.fortunacambios.com.py/assets/img/flag/icono_moneda_dolar.png)Euro x Dólar | 1,14 | 1,23 | +1,65% |
+
+Quality, safety, and trust.
+

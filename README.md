@@ -1,42 +1,39 @@
 # Cambio Claro · Best Exchange Rates Paraguay
 
-A lightweight Spanish-language exchange-rate reference for Asunción. Plain HTML, CSS and JavaScript modules; no build step, production dependencies, tracking, advertising or secret API keys.
+A city-first Spanish exchange-rate comparison and calculator. Plain HTML/CSS/JS, no build step, production dependencies, ads, tracking or secret keys.
 
 ## Run and test
 
-Requires Node 22.22.2+, 24.15+ or 26+ for tests; Python 3 for the local server.
+Node 22.22.2+, 24.15+ or 26+; Python3 for local HTTP.
 
 ```sh
 npm ci
 npm run check
 npm start
-# Open http://localhost:8000 (ES modules need HTTP, not file://).
 ```
 
-`npm run check` checks JS syntax and the Node test suite. Tests use captured public-source fixtures, never silently fall back to made-up production data. Fixture values are historical test inputs, not current rates.
+Open http://localhost:8000. Optional Playwright browser regression: `node tests/browser.cjs` with `BROWSER_EXECUTABLE` if using system Chromium. Fixtures are historical test data, never production fallback quotes.
 
-Optional browser regression: install Playwright in the development environment, start the local server, then run `node tests/browser.cjs`. The harness intercepts source requests with fixtures and tests buy/sell calculations, four currencies, invalid amounts, interrupted requests, errors, previous-session readings, recovery and mobile overflow. Set `BROWSER_EXECUTABLE` to the Chromium executable if not using Playwright's bundled browser. This does not send calculator amounts to an external site.
+## Coverage and data
 
-## Data model and reliability
+- `providers.js` contains the 23 houses in the BCP supervised-entity register dated 2026-03-20, with official URLs and conservatively verified city coverage. This is not a census of informal traders or a guarantee of exhaustive branches. Source URLs accompany city records.
+- City selection filters both real quote rows and the official-link directory. Houses without automatic prices appear only in the directory, not as fake rate rows.
+- Norte uses currency-specific public pages and seven explicitly named city rows. Salto/Saltos del Guairá is normalized to the same city; the branch label preserves the source.
+- Bonanza, Alberdi, Fe, Ita, Fénix, Fortuna, Valor, Río Paraná, Triple C, Mercosur and Uno adapters retain branch-specific quotes and published source labels. Twelve automatic providers including Norte are configured; the directory includes all 23 registered houses. Availability varies by city/currency and source response. Paraná Country maps to Hernandarias, not Ciudad del Este. Distinct branches within the same city remain distinct.
+- Public pages are read through Jina Reader. Source caches, availability, publication dates and layouts are external dependencies. Retrieval time is never claimed as source update time. No bypasses or private endpoints are used.
+- PYG periods group thousands and commas mark decimals: `7.300` means 7300, not 7.3. Non-positive, malformed, duplicate, crossed-currency and inverted prices fail closed.
+- Compra means the house buys the user's currency; Venta means it sells. Cards are sorted by highest buy or lowest sell among available readings, not a market-wide best-price guarantee.
+- A 60-second in-memory raw-page cache reduces repeated Jina reads when changing city/currency. Cached quotes keep the actual network retrieval timestamp. Explicit Actualizar bypasses this cache; errors are not cached.
+- Three source workers run concurrently, with 12-second per-source and 45-second overall time limits. Río Paraná, Triple C, Mercosur and Uno reject timestamps older than four days or materially in the future, and Mercosur conflicting duplicate rows are omitted rather than guessed.
+- Rates render progressively as sources respond. Request generation and abort handling prevent older city/currency requests replacing the current selection. Previous readings are isolated by provider/currency/city and visibly labeled; they do not drive automatic calculations after refresh failure. No rate data is persisted between sessions.
+- Manual calculator rates are explicitly user-entered and reset on city/currency/operation changes. Calculation happens locally and excludes fees.
 
-- Preserves the newer `gh-pages` Norte Cambios integration, replacing its USD-only, first-row parser with verified currency-specific endpoints: `https://www.nortecambios.com.py/currency/USD` (also EUR, BRL and ARS).
-- Only the explicitly named **Asunción** row is used. The homepage defaults to Pedro Juan Caballero and is not a valid substitute for Asunción. The earlier homepage parser is retained with regression tests but is not used by the app.
-- Jina Reader provides a browser-readable public-page representation. The full HTTPS target URL is preserved. Proxy caching, downtime and future source-layout changes remain dependencies; an approved first-party API or backend should replace this before a serious commercial launch.
-- Paraguayan rates use periods for thousands and commas for decimals. `7.300` means 7300 PYG, not 7.3. Malformed, negative, zero, ambiguous, duplicate, cross-currency and inverted quotes fail closed.
-- “Compra” means the house buys the user's foreign currency; “Venta” means the house sells it. Both amounts in the calculator are foreign-currency units, multiplied by the applicable PYG/unit rate. Fees are not included.
-- Retrieval time and source update text are distinct. Missing publication time is explicitly unknown. No timestamp is fabricated. A successful fetch does **not** prove a quote is up to date.
-- On failure, a same-currency prior reading may remain visibly labeled for this tab's session, but cannot automatically drive the calculator. An explicitly labeled manual-rate mode remains available offline. No rates are persisted to local storage. Switching currencies aborts the older request; late responses cannot replace the selected currency.
-- Current source warning: [Norte's notice](https://www.nortecambios.com.py/centro-de-avisos/1) says its site is in testing and Asunción quotes may be affected. The UI prominently repeats this and advises confirmation with the cashier.
-- One active house is **not a best-price market comparison**. Placeholder Continental/Casa de Cambio adapters from master are removed from execution, not replaced with fabricated data. Original code remains in Git history.
+See [DATA-SOURCES.md](DATA-SOURCES.md) for remaining provider-specific limitations.
 
-## Privacy and commercial readiness
+## Privacy and methodology
 
-The amount is processed only locally. Rate retrieval connects the visitor's browser to Jina Reader; standard connection information, including IP address, may be visible to that provider. Source pages and links follow their own policies. No analytics, ad scripts or automatically loaded third-party iframes are embedded.
+No ads or analytics. The calculator amount is never sent externally. Public-page retrieval sends ordinary browser connection metadata to Jina. Source/methodology/privacy explanations are collapsed under the footer details, rather than repeated warning banners. Norte's testing notice is linked there. Before commercial monetization, source terms and data access must be reviewed.
 
-Before monetization: verify source reuse/terms and commercial data access, add more verified Asunción providers, establish uptime/source freshness monitoring, review privacy disclosures against the exact deployment, and configure any advertising account/consent implementation separately. No advertising approval or revenue is promised. Do not insert fake publisher IDs, claims of guaranteed best rates, or stale sample rates as live data.
+## Release
 
-## Repository and release
-
-The actual source branch is `master`. Existing GitHub Pages publishes the independent, orphan-history `gh-pages` branch. Do not merge these unrelated histories or force-push. For an authorized release, commit source to master, then copy the four production files (`index.html`, `style.css`, `script.js`, `rates.js`) onto the existing gh-pages history and commit normally. Do not publish fixtures or development tooling to the site. Verify live file hashes after Pages builds before reporting deployment complete.
-
-The UI is usable without external CSS/font/CDN requests. JavaScript and the rate-source request are required for live calculations.
+`master` and `gh-pages` have independent existing histories. Commit source on master and production assets on existing gh-pages as normal fast-forward commits, without force-push, new branches or unrelated-history merges. Production assets: `index.html`, `style.css`, `script.js`, `rates.js`, `providers.js`, `adapters.js`, `source-fetch.js`, `adapters-extra.js`. Do not publish fixtures or dev tooling. Verify remote heads, Pages build and live hashes for all assets before reporting deployment complete.
