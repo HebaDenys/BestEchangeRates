@@ -122,16 +122,22 @@ test('rapid currency changes ignore delayed obsolete requests', async ({ page, s
 
 test('cached page reads retain retrieval time; explicit refresh bypasses cache', async ({ page, sources }) => {
   await open(page);
-  const initial = sources.requests.length;
+  const initialRequests = [...sources.requests];
   const timestamp = await page.locator('#quotes .quote-meta p').first().textContent();
   await select(page, '#citySelect', '');
   const allCities = sources.requests.length;
-  expect(allCities).toBeGreaterThan(initial);
+  expect(allCities).toBeGreaterThan(initialRequests.length);
   await select(page, '#citySelect', 'Asunción');
-  expect(sources.requests).toHaveLength(allCities);
+  // Successful pages must all remain cached. The real Más fixture only covers
+  // Matriz: its Asunción HTTP503 is deliberately not cached and must be retried.
+  expect(sources.requests.slice(allCities)).toEqual([
+    'https://mascambios.com.py/api/cotizaciones.php?sucursal=sucursal1',
+  ]);
   await expect(page.locator('#quotes .quote-meta p').first()).toHaveText(timestamp);
+  const beforeRefresh = sources.requests.length;
   await page.locator('#fetchBtn').click(); await settled(page);
-  expect(sources.requests.length).toBeGreaterThan(allCities);
+  // Refresh refetches precisely the original city sources, including the failure.
+  expect(sources.requests.slice(beforeRefresh).sort()).toEqual([...initialRequests].sort());
 });
 
 test('city without automatic prices offers directory instead of fake best quote', async ({ page, sources }) => {
