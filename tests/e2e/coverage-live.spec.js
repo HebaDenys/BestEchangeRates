@@ -29,7 +29,11 @@ test('new public sources preserve structured content through real browser CORS',
     const headers=check.url.startsWith('https://r.jina.ai/') ? {'X-Cache-Tolerance':'60',...(check.force?{'X-No-Cache':'true'}:{})} : {};
     if(check.selector)headers['X-Return-Format']='html';
     const response=await fetch(check.url,{headers,signal:AbortSignal.timeout(30000)});
-    if(!response.ok)return {ok:false,status:response.status};
+    if(!response.ok){
+     let errorName=null;
+     try{const error=JSON.parse(await response.text()); const name=error.name || error.error?.name || error.error?.code || error.code; if(typeof name==='string' && /^[A-Za-z0-9_. -]{1,80}$/.test(name))errorName=name;}catch{}
+     return {ok:false,status:response.status,errorName};
+    }
     const text=await response.text();
     if(check.selector)return {ok:!!new DOMParser().parseFromString(text,'text/html').querySelector(check.selector),status:response.status};
     if(check.textIncludes)return {ok:text.includes(check.textIncludes),status:response.status};
@@ -37,6 +41,6 @@ test('new public sources preserve structured content through real browser CORS',
    }catch(error){return {ok:false,error:error.message};}
   },check);
   await test.info().attach(`${check.id}-transport`,{body:JSON.stringify({checkedAt:new Date().toISOString(),...result}),contentType:'application/json'});
-  expect(result,`${check.id}: public structured content must be browser-readable`).toMatchObject({ok:true,status:200});
+  expect.soft(result,`${check.id}: public structured content must be browser-readable`).toMatchObject({ok:true,status:200});
  }
 });
