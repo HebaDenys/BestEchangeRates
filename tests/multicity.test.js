@@ -8,9 +8,9 @@ test('multi-provider cities, rankings, selection stability and partial-city fail
   const originals = { document: globalThis.document, Option: globalThis.Option, fetch: globalThis.fetch };
   globalThis.document = dom.window.document;
   globalThis.Option = dom.window.Option;
-  let failEncarnacion = false, enableExtra = false;
+  let failEncarnacion = false, enableExtra = false, calls=0;
   globalThis.fetch = async (url, { signal }) => {
-    let body;
+    calls++; let body;
     if (url.includes('nortecambios')) {
       await new Promise(resolve => setTimeout(resolve, 60));
       body = fixture(`norte-${url.split('/').pop().toLowerCase()}-2026-10-20.md`);
@@ -38,12 +38,27 @@ test('multi-provider cities, rankings, selection stability and partial-city fail
   try {
     await import('../script.js'); await settle();
     assert.equal(cards().length, 3);
+    let requestsBeforeAmount = calls;
+    change('operation','buy','input');
+    assert.match($('bestIdentity').textContent,/Alberdi/);
+    assert.equal($('bestTotal').textContent,'₲ 572.000');
+    const chosen = [...$('quoteSelect').options].find(option=>option.textContent.includes('Norte'));
+    change('quoteSelect',chosen.value,'input');
+    assert.equal($('result').textContent,'₲ 575.000');
+    assert.equal($('bestTotal').textContent,'₲ 572.000');
+    change('amount','200','input');
+    assert.equal($('bestTotal').textContent,'₲ 1.144.000');
+    assert.equal(calls,requestsBeforeAmount);
+    change('amount','0.00001','input');
+    assert.match($('bestExplanation').textContent,/menos de ₲ 0,01/);
+    assert.match(cards()[1].querySelector('.comparison-delta').textContent,/menos de ₲ 0,01/);
+    change('amount','100','input');change('operation','sell','input');
     change('citySelect', ''); await settle();
     assert.equal(cards().length, 16);
     assert.ok(cards().some(card => card.textContent.includes('Paraná Country · Hernandarias')));
     change('citySelect', 'Ciudad del Este'); await settle();
     assert.equal(cards().length, 5);
-    const rates = column => cards().map(card => Number(card.querySelectorAll('.price-value')[column].textContent.replace(/[^0-9,]/g, '').replace(',', '.')));
+    const rates = () => cards().map(card => Number(card.querySelector('.comparison-rate').firstChild.textContent.replace(/[^0-9,]/g, '').replace(',', '.')));
     assert.deepEqual(rates(0), [...rates(0)].sort((a, b) => b - a));
     change('operation', 'buy', 'input');
     assert.deepEqual(rates(1), [...rates(1)].sort((a, b) => a - b));
@@ -59,6 +74,7 @@ test('multi-provider cities, rankings, selection stability and partial-city fail
     failEncarnacion = true;
     $('fetchBtn').click(); await settle();
     assert.equal(document.querySelectorAll('.previous').length, 1);
+    assert.equal($('bestTotal').textContent,'—');
     assert.equal($('result').textContent, '—');
     change('citySelect', 'Asunción'); await settle();
     assert.equal(cards().length, 3);

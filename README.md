@@ -37,3 +37,9 @@ No ads or analytics. The calculator amount is never sent externally. Public-page
 ## Release
 
 `master` and `gh-pages` have independent existing histories. Commit source on master and production assets on existing gh-pages as normal fast-forward commits, without force-push, new branches or unrelated-history merges. Production assets: `index.html`, `style.css`, `script.js`, `rates.js`, `providers.js`, `adapters.js`, `source-fetch.js`, `adapters-extra.js`. Do not publish fixtures or dev tooling. Verify remote heads, Pages build and live hashes for all assets before reporting deployment complete.
+
+## Decision-first comparison
+
+City, currency, operation and amount are entered before the results. The best published available quote is calculated independently from the optional reference calculator. Every comparison row includes the amount, difference from best and relevant house-side rate. Equal rates are explicitly tied; failed-source previous readings never compete. Changing amount or operation does not fetch data. Amounts and differences are displayed to at most two decimals; nonzero differences below 0.01 PYG are labeled rather than displayed as zero. Fees are unknown and not included in the estimates.
+
+`branch-locations.js` matches exact source, branch and city identities. It contains selective official branch addresses and official map/directions URLs; unsupported branches link to the official source instead. Search-index-only addresses are not rendered. No location permission, map embed or guessed pin is used. Include `comparison.js` and `branch-locations.js` in production assets.
