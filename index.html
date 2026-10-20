@@ -1,44 +1,36 @@
-<!DOCTYPE html>
-<html lang="it">
+<!doctype html>
+<html lang="es-PY">
 <head>
-  <meta charset="UTF-8">
-  <title>Best Exchange Rates – Asunción</title>
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="description" content="Consulta cotizaciones publicadas por casas de cambio de Paraguay y calcula cuánto recibirías o pagarías en guaraníes. Fuente, localidad y disponibilidad visibles.">
+  <meta name="theme-color" content="#113d35">
+  <title>Cambio Claro · Cotizaciones en Paraguay</title>
   <link rel="stylesheet" href="style.css">
+  <script type="module" src="script.js"></script>
 </head>
-<body class="bg-gray-50 min-h-flex flex-col items-center p-6">
-  <h1 class="text-2xl font-bold mb-4">Tassi di cambio migliori a Asunción</h1>
-
-  <div class="flex flex-col sm:flex-row gap-4 w-full max-w-xl">
-    <select id="currencySelect" class="border rounded px-3 py-2 w-full sm:w-auto">
-      <option value="USD">USD</option>
-      <option value="EUR">EUR</option>
-      <option value="ARS">ARS</option>
-      <option value="BRL">BRL</option>
-    </select>
-    <button id="fetchBtn"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
-      Aggiorna tassi
-    </button>
-  </div>
-
-  <p id="status" class="mt-2 text-sm text-gray-600"></p>
-
-  <table id="ratesTable"
-         class="mt-4 w-full max-w-xl border-collapse border border-gray-300"
-         hidden>
-    <thead class="bg-gray-200">
-      <tr>
-        <th class="border px-4 py-2 text-left">Fonte</th>
-        <th class="border px-4 py-2 text-left">Acquisto</th>
-        <th class="border px-4 py-2 text-left">Vendita</th>
-        <th class="border px-4 py-2 text-left">Aggiornato</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <script src="script.js"></script>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="site-header"><a class="brand" href="./" aria-label="Cambio Claro, inicio"><span class="brand-mark" aria-hidden="true">⇄</span> Cambio Claro<span class="beta">BETA</span></a><span class="header-note">Paraguay · Guaraníes</span></header>
+  <main id="main">
+    <noscript><p class="notice">Activa JavaScript para consultar cotizaciones y usar la calculadora. También puedes abrir las fuentes oficiales enlazadas al final de la página.</p></noscript>
+    <section class="intro"><p class="eyebrow">TU CAMBIO, SIN CONFUSIONES</p><h1>Antes de cambiar,<br>haz las cuentas.</h1><p class="lead">Consulta cotizaciones de Asunción y estima tu cambio a guaraníes. La localidad y la fuente, siempre a la vista.</p></section>
+    <section class="workspace" aria-label="Cotizaciones y calculadora">
+      <div class="quotes-panel">
+        <div class="section-heading"><div><p class="eyebrow">01 · COTIZACIONES</p><h2>Elige tu moneda</h2></div><span class="unit">PYG por unidad</span></div>
+        <div class="controls"><label for="currencySelect" class="sr-only">Moneda extranjera</label><select id="currencySelect"><option value="USD">USD · Dólar estadounidense</option><option value="EUR">EUR · Euro</option><option value="BRL">BRL · Real brasileño</option><option value="ARS">ARS · Peso argentino</option></select><button id="fetchBtn" type="button">Actualizar</button></div>
+        <p id="status" class="status" role="status" aria-live="polite">Consulta una fuente para comenzar.</p>
+        <div id="locationNote" class="notice" hidden></div>
+        <p class="provider-warning">Norte Cambios <a href="https://www.nortecambios.com.py/centro-de-avisos/1" target="_blank" rel="noopener noreferrer">advierte que su web está en pruebas</a> y que las cotizaciones de Asunción pueden verse afectadas. Confirma los valores con la caja antes de operar.</p>
+        <div id="quotes" aria-busy="false"></div>
+        <p class="source-note">Lectura de páginas públicas mediante <a href="https://jina.ai/reader/" target="_blank" rel="noopener noreferrer">Jina Reader</a>. Puede haber caché, retrasos o interrupciones. La hora de consulta no es la hora de actualización de la casa de cambio.</p>
+      </div>
+      <aside class="calculator" aria-labelledby="calculatorTitle"><p class="eyebrow">02 · TU ESTIMACIÓN</p><h2 id="calculatorTitle">¿Cuánto cambiarías?</h2><label for="operation">Quiero</label><select id="operation"><option value="sell">Vender mi moneda extranjera</option><option value="buy">Comprar moneda extranjera</option></select><label for="amount">Cantidad en <span id="amountCurrency">USD</span></label><input id="amount" type="number" inputmode="decimal" min="0" max="1000000000000" step="any" value="100" aria-describedby="amountHint"><p id="amountHint" class="hint">Introduce una cantidad mayor que cero.</p><label for="quoteSelect">Cotización de referencia</label><select id="quoteSelect"><option value="">Sin cotización disponible</option><option value="manual">Introducir mi propia cotización</option></select><div id="manualRateGroup" hidden><label for="manualRate">Tu cotización · PYG por unidad</label><input id="manualRate" type="number" inputmode="decimal" min="0" step="any" placeholder="Ej.: 5650" aria-describedby="manualHint"><p id="manualHint" class="hint">Sin separadores de miles: escribe 5650, no 5.650. Valor introducido por ti, no verificado. Usa compra si vendes tu moneda y venta si la compras.</p></div><div class="estimate"><p id="resultLabel">Recibirías aproximadamente</p><output id="result" aria-live="polite">—</output><p id="calculationDetail">Consulta una cotización para calcular.</p></div><p class="calculator-note">Estimación sin comisiones. Confirma el precio, la sucursal y la disponibilidad antes de operar.</p></aside>
+    </section>
+    <section class="explain" aria-labelledby="explainTitle"><div><p class="eyebrow">LO QUE CONVIENE SABER</p><h2 id="explainTitle">Compra y venta,<br>desde el otro lado.</h2></div><div><h3>Si tú vendes dólares…</h3><p>La casa de cambio los <strong>compra</strong>. Multiplicamos tu cantidad por su precio de compra para estimar los guaraníes que recibirías.</p></div><div><h3>Si tú compras dólares…</h3><p>La casa de cambio te los <strong>vende</strong>. Usamos su precio de venta para estimar los guaraníes que pagarías.</p></div></section>
+    <section class="other-sources" aria-labelledby="otherTitle"><h2 id="otherTitle">Contrasta antes de cambiar</h2><p>Consulta otras casas de cambio en sus sitios oficiales. Estos enlaces no son cotizaciones verificadas por Cambio Claro. Puedes introducir una cotización en la calculadora para hacer tus cuentas.</p><div class="source-links"><a href="https://www.cambioschaco.com.py/" target="_blank" rel="noopener noreferrer">Cambios Chaco ↗</a><a href="https://www.maxicambios.com.py/" target="_blank" rel="noopener noreferrer">MaxiCambios ↗</a></div></section>
+    <section class="method" aria-labelledby="methodTitle"><h2 id="methodTitle">Transparencia antes que promesas</h2><p>Esta versión consulta una sola casa de cambio. No representa todo el mercado ni garantiza el mejor precio de Asunción. Solo mostramos la localidad que la fuente permite verificar; nunca sustituimos una ciudad por otra.</p><details><summary>Fuentes, privacidad y uso de los datos</summary><p>Fuente activa: <a href="https://www.nortecambios.com.py/" target="_blank" rel="noopener noreferrer">Norte Cambios</a>. No tenemos afiliación con esta casa de cambio. Los valores son orientativos, no ofertas vinculantes.</p><p>La calculadora funciona en tu navegador. No enviamos el importe introducido a la fuente. Al consultar cotizaciones, tu navegador se conecta a Jina Reader, que procesa la petición conforme a sus propias políticas. No incorporamos anuncios, cookies analíticas ni rastreadores en esta versión.</p><p>Si una consulta falla, conservamos únicamente la última lectura de esta sesión y la marcamos como anterior. No se presenta como una cotización actual ni se usa automáticamente para calcular. También puedes calcular con una cotización introducida por ti, identificada como no verificada.</p></details></section>
+  </main>
+  <footer><a href="https://github.com/HebaDenys/BestEchangeRates/issues" target="_blank" rel="noopener noreferrer">Informar un problema</a><span class="brand">⇄ Cambio Claro</span><p>Una referencia útil. La decisión, con información.</p></footer>
 </body>
 </html>
