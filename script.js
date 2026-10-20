@@ -1,14 +1,14 @@
-import {compareQuotes} from './comparison.js?v=20261020-4';
-import {branchLocation} from './branch-locations.js?v=20261020-4';
-import { SOURCES, NORTE_CITIES, fetchSource, calculate, proxyUrl } from './rates.js?v=20261020-4';
-import { PROVIDERS, REGISTER } from './providers.js?v=20261020-4';
-import { EXTRA_SOURCES } from './adapters.js?v=20261020-4';
-import {MORE_SOURCES} from './adapters-extra.js?v=20261020-4';
-import {COVERAGE_SOURCES} from './adapters-coverage.js?v=20261020-4';
-import {BANK_SOURCES} from './adapters-banks.js?v=20261020-4';
-import {BANK_PROVIDERS} from './bank-providers.js?v=20261020-4';
-import {CHANNELS, isBankQuote, quoteChannel, matchesChannel, matchesCity, readSelection, savePreferences, shareUrl} from './selection.js?v=20261020-4';
-import {createSourceReader,sourceFailureReason,fairSourceQueue} from './source-fetch.js?v=20261020-4';
+import {compareQuotes} from './comparison.js?v=20261020-5';
+import {branchLocation} from './branch-locations.js?v=20261020-5';
+import { SOURCES, NORTE_CITIES, fetchSource, calculate, proxyUrl } from './rates.js?v=20261020-5';
+import { PROVIDERS, REGISTER } from './providers.js?v=20261020-5';
+import { EXTRA_SOURCES } from './adapters.js?v=20261020-5';
+import {MORE_SOURCES} from './adapters-extra.js?v=20261020-5';
+import {COVERAGE_SOURCES} from './adapters-coverage.js?v=20261020-5';
+import {BANK_SOURCES} from './adapters-banks.js?v=20261020-5';
+import {BANK_PROVIDERS} from './bank-providers.js?v=20261020-5';
+import {CHANNELS, isBankQuote, quoteChannel, matchesChannel, matchesCity, readSelection, savePreferences, shareUrl} from './selection.js?v=20261020-5';
+import {createSourceReader,sourceFailureReason,fairSourceQueue} from './source-fetch.js?v=20261020-5';
 const $ = id => document.getElementById(id);
 const format = value => new Intl.NumberFormat('es-PY', { maximumFractionDigits: 2 }).format(value);
 const differenceLabel = value => value > 0 && value < 0.01 ? 'menos de ₲ 0,01' : `₲ ${format(value)}`;
@@ -185,6 +185,10 @@ async function refresh(force=false) {
       const result=resultBySource.get(source.id),line=element('p');
       const url=source.url || PROVIDERS.find(provider=>provider.id===source.id)?.url;
       line.append(url ? link(source.name,url) : element('span',source.name),document.createTextNode(`: ${result.skipped ? 'Sin consultar · Tiempo total agotado' : result.reason}`));
+      for(const detail of result.details || []) {
+        const text=[detail.name,detail.code,detail.message].filter(Boolean).join(' · ');
+        if(text) line.append(document.createTextNode(` · Reader: ${text}`));
+      }
       diagnostics.append(line);
     }
     const pending=active.length-resultBySource.size;
@@ -206,14 +210,14 @@ async function refresh(force=false) {
       signal.addEventListener('abort',cancelSource,{once:true});
       let timedOut=false;
       const sourceTimeout=setTimeout(()=>{timedOut=true;cancelSource();},90000);
+      const reader=createSourceReader({force});
       try {
-        const reader=createSourceReader({force});
         const items=(await source.fetch(currency,{signal:sourceController.signal,city:BANK_SOURCES.includes(source)?undefined:city,fetcher:reader.read})).map(quote=>({...quote,retrievedAt: reader.readings.has(quote.url) ? new Date(reader.readings.get(quote.url)).toISOString() : reader.readings.has(proxyUrl(quote.url)) ? new Date(reader.readings.get(proxyUrl(quote.url))).toISOString() : quote.retrievedAt})).filter(quote => quote.currency===currency && matchesCity(quote,city));
         if(current!==request) return;
         if(!items.length) throw new Error('Sin cotización para esta ciudad');
         resultBySource.set(source.id,{ok:true,items});
         previous.set(`${source.id}:${currency}:${city}`,items);
-      } catch(error) { if(current!==request) return; resultBySource.set(source.id,{ok:false,reason:sourceFailureReason(error,{timedOut,aborted:signal.aborted})}); }
+      } catch(error) { if(current!==request) return; resultBySource.set(source.id,{ok:false,reason:sourceFailureReason(error,{timedOut,aborted:signal.aborted}),details:[...reader.failures.values()]}); }
       finally { clearTimeout(sourceTimeout); signal.removeEventListener('abort',cancelSource); }
       if(current===request) showResults();
      }
