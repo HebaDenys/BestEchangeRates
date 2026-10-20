@@ -23,6 +23,13 @@ test('UI: four currencies, buy/sell, invalid input, interrupted requests, failur
     await import('../script.js'); await settle(done);
     assert.equal($('quotes').querySelector('.branch').textContent,'Asunción');
     assert.equal($('result').textContent,'₲ 565.000');
+    assert.ok($('bestFreshness').textContent.length>0);
+    assert.equal($('sourceDiagnostics').open,false);
+    assert.match($('sourceDiagnostics').textContent,/HTTP 503/);
+    assert.ok($('sourceDiagnostics').querySelector('a[href^="https://"]'));
+    assert.ok([...$('citySelect').options].some(option=>option.value==='Luque'));
+    assert.match($('bankDirectory').textContent,/Presencia en Asunción/);
+    assert.match($('bankDirectory').textContent,/Sede bancaria; cambio no confirmado/);
     change('operation','buy'); assert.equal($('result').textContent,'₲ 575.000');
     for (const amount of ['0','-1','','10000000000000']) {change('amount',amount);assert.equal($('result').textContent,'—');assert.equal($('amount').getAttribute('aria-invalid'),'true');}
     change('amount','100');

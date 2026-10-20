@@ -90,6 +90,9 @@ test('failure excludes previous readings from best, preserves selection cache is
   sources.fail = true;
   await page.locator('#fetchBtn').click(); await settled(page);
   await expect(page.locator('#quotes .previous')).toHaveCount(1);
+  await expect(page.locator('#sourceDiagnostics')).not.toHaveAttribute('open','');
+  await expect(page.locator('#sourceDiagnostics')).toContainText('HTTP 503');
+  await expect(page.locator('#sourceDiagnostics')).not.toContainText('Fixture unavailable');
   await expect(page.locator('#bestTotal')).toHaveText('—');
   await expect(page.locator('#quotes .best-row')).toHaveCount(0);
   await expect(page.locator('#quotes .previous .comparison-delta')).toHaveText('No comparable');
@@ -128,11 +131,11 @@ test('cached page reads retain retrieval time; explicit refresh bypasses cache',
   const allCities = sources.requests.length;
   expect(allCities).toBeGreaterThan(initialRequests.length);
   await select(page, '#citySelect', 'Asunción');
-  // Successful pages must all remain cached. The real Más fixture only covers
-  // Matriz: its Asunción HTTP503 is deliberately not cached and must be retried.
-  expect(sources.requests.slice(allCities)).toEqual([
+  // Successful pages remain cached; unavailable real branch fixtures are not.
+  expect(sources.requests.slice(allCities).sort()).toEqual([
     'https://mascambios.com.py/api/cotizaciones.php?sucursal=sucursal1',
-  ]);
+    'https://r.jina.ai/https://unocambios.com.py/modelos.php?cotizacion&id_sucursal=14',
+  ].sort());
   await expect(page.locator('#quotes .quote-meta p').first()).toHaveText(timestamp);
   const beforeRefresh = sources.requests.length;
   await page.locator('#fetchBtn').click(); await settled(page);
@@ -337,4 +340,84 @@ test('direct JSON source keeps its retrieval timestamp when served from cache', 
   await page.locator('#fetchBtn').click(); await settled(page);
   expect(requests()).toBeGreaterThan(before);
   await expect(mas.locator('.quote-meta p')).not.toHaveText(timestamp);
+});
+
+test('Uno branch endpoint shows Santa Rita, Campo 9 and distinct PJC prices instead of Matriz defaults', async ({ page, sources }) => {
+  await open(page);
+  const uno=page.locator('#quotes .quote').filter({has:page.getByRole('heading',{name:'Uno Cambios',exact:true})});
+  for(const [city,branch,total] of [
+    ['Santa Rita','SUCURSAL N° 7 - SANTA RITA','₲ 563.000'],
+    ['Dr. Juan Eulogio Estigarribia','CAJA AUXILIAR N° 20 - CAMPO 9','₲ 558.000'],
+  ]) {
+    await select(page,'#citySelect',city);
+    await expect(uno).toHaveCount(1);
+    await expect(uno.locator('.branch')).toContainText(branch);
+    await expect(uno.locator('.branch')).toContainText(city);
+    await expect(uno.locator('.comparison-total')).toHaveText(total);
+    await expect(uno.locator('.quote-meta')).toContainText('sin hora publicada');
+    await expect(page.locator('#bestFreshness')).toHaveText('Fecha de publicación no indicada');
+    await expect(uno.locator('h3 a')).toHaveAttribute('href',/modelos\.php\?cotizacion&id_sucursal=/);
+  }
+  await select(page,'#citySelect','Pedro Juan Caballero');
+  await expect(uno).toHaveCount(2);
+  const totals=await uno.locator('.comparison-total').allTextContents();
+  expect(totals).toEqual(['₲ 680.000','₲ 560.000']);
+  for(const branch of await uno.locator('.branch').allTextContents()) expect(branch).toContain('Pedro Juan Caballero');
+  expect(totals).not.toContain('₲ 564.500');
+  await verifyRanking(page,'sell');
+  await select(page,'#citySelect','Ciudad del Este');
+  await expect(uno).toHaveCount(3);
+  await expect(uno.filter({hasText:'UNIAMERICA'})).toHaveCount(1);
+  for(const currency of ['EUR','ARS']) {
+    await select(page,'#currencySelect',currency);
+    await expect(uno).toHaveCount(2);
+    await expect(uno.filter({hasText:'UNIAMERICA'})).toHaveCount(0);
+  }
+  await select(page,'#currencySelect','BRL');
+  await expect(uno.filter({hasText:'UNIAMERICA'})).toHaveCount(1);
+});
+
+test('bank-only city presence is not a local price or a verified cash-exchange service', async ({ page, sources }) => {
+  await open(page);
+  await select(page,'#citySelect','Filadelfia');
+  await expect(page.locator('#citySelect')).toHaveValue('Filadelfia');
+  await expect(page.locator('#quotes .quote')).toHaveCount(0);
+  await expect(page.locator('#bestTotal')).toHaveText('—');
+  const atlas=page.locator('#bankDirectory .directory-item').filter({has:page.getByRole('link',{name:'Banco Atlas ↗',exact:true})});
+  await expect(atlas).toHaveCount(1);
+  await expect(atlas).toContainText('Presencia en Filadelfia');
+  await expect(atlas).toContainText('Sede bancaria; cambio no confirmado');
+  await expect(atlas).toContainText('La publicación bancaria no confirma el precio de esta sede.');
+  await select(page,'#channelSelect','cash');
+  await expect(page.locator('#bankQuotes .quote')).toHaveCount(3);
+  for(const row of await page.locator('#bankQuotes .quote').allTextContents()) {
+    expect(row).toContain('Sin ciudad ni sucursal asignada');
+    expect(row).not.toContain('Filadelfia');
+  }
+  await expect(page.locator('#bestTotal')).toHaveText('—');
+});
+
+test('Reader freshness headers apply to default and forced requests but never direct Más API', async ({ page, sources }) => {
+  await open(page);
+  const initial=sources.observed.filter(({url})=>url.startsWith('https://r.jina.ai/'));
+  expect(initial.length).toBeGreaterThan(0);
+  for(const {headers} of initial) {
+    expect(headers['x-cache-tolerance']).toBe('60');
+    expect(headers['x-no-cache']).toBeUndefined();
+  }
+  const before=sources.observed.length;
+  await page.locator('#fetchBtn').click(); await settled(page);
+  const forced=sources.observed.slice(before).filter(({url})=>url.startsWith('https://r.jina.ai/'));
+  expect(forced.length).toBeGreaterThan(0);
+  for(const {headers} of forced) {
+    expect(headers['x-cache-tolerance']).toBe('60');
+    expect(headers['x-no-cache']).toBe('true');
+  }
+  const direct=sources.observed.filter(({url})=>url.startsWith('https://mascambios.com.py/api/'));
+  expect(direct.length).toBe(2);
+  for(const {headers} of direct) {
+    expect(headers['x-cache-tolerance']).toBeUndefined();
+    expect(headers['x-no-cache']).toBeUndefined();
+    expect(headers['x-return-format']).toBeUndefined();
+  }
 });

@@ -37,7 +37,7 @@ Optional bounded published-site smoke: `npm run test:e2e:live`. This performs on
 - PYG periods group thousands and commas mark decimals: `7.300` means 7300, not 7.3. Non-positive, malformed, duplicate, crossed-currency and inverted prices fail closed.
 - Compra means the house buys the user's currency; Venta means it sells. Cards are sorted by highest buy or lowest sell among available readings, not a market-wide best-price guarantee.
 - A 60-second in-memory raw-page cache reduces repeated Jina reads when changing city/currency. Cached quotes keep the actual network retrieval timestamp. Explicit Actualizar bypasses this cache; errors are not cached.
-- Three source workers run concurrently, with 12-second per-source and 45-second overall time limits. Río Paraná, Triple C and Mercosur reject timestamps older than four days or materially in the future, and Mercosur conflicting duplicate rows are omitted rather than guessed.
+- Three source workers run concurrently, with 25-second per-source and 90-second overall time limits. Río Paraná, Triple C and Mercosur reject timestamps older than four days or materially in the future, and Mercosur conflicting duplicate rows are omitted rather than guessed.
 - Rates render progressively as sources respond. Request generation and abort handling prevent older city/currency requests replacing the current selection. Previous readings are isolated by provider/currency/city and visibly labeled; they do not drive automatic calculations after refresh failure. No rate data is persisted between sessions.
 - Manual calculator rates are explicitly user-entered and reset on city/currency/operation changes. Calculation happens locally and excludes fees.
 
@@ -66,3 +66,13 @@ Atlas, Ueno, Familiar and Solar retain each source's explicit channel, null/N/A 
 `selection.js` validates share filters; explicit valid URL parameters override saved city/currency, then defaults. Amount/operation/channel are not persisted. `ciudades/build.mjs` regenerates three static city guides from verified directory data; `node --test ciudades/test.mjs` checks metadata, links and directory coverage. These guides contain no hardcoded current prices.
 
 Fixture contracts name expected branches/currencies, including known missing or stale rows, and test deliberate removal mutations. They detect parser/fixture drift, not perpetual completeness of live providers. The bounded live transport smoke checks browser CORS and public content separately, with no fixed price assertions. External outages fail that smoke honestly. The static app still depends on third-party rate limits and cannot guarantee all sources respond in one lookup.
+
+## Visual-audit corrections (20 October 2026)
+
+Uno now uses 16 individually identified branch endpoints across eight cities instead of copying the main board. Branch responses do not publish a trustworthy date, so their publication date is unknown. Missing currency rows, invalid values and failed branch responses stay absent. Branch reads are city-filtered and limited to three concurrent requests. The main-page global update label is not assigned to every branch.
+
+Bank location evidence contains 106 institution-city records across 51 cities. The selector includes 56 distinct cities across house and bank directories; this does not mean 56 cities with local prices. Sixteen cities are configured for house quote adapters, subject to source availability. Familiar/Ueno service evidence differs from Atlas/Solar banking-presence evidence, and no bank-wide price is relabeled as a local branch offer.
+
+Reader requests set documented X-Cache-Tolerance:60; Actualizar adds X-No-Cache:true. These headers are not sent to direct APIs. Interleaved fetching prevents banks from always sitting behind the full house queue. Safe, collapsed diagnostics distinguish HTTP errors, timeouts and unverifiable source formats. Failed or previously read quotes never become current winners. The best result visibly reports an unknown source publication date when necessary.
+
+Application JS/CSS references use a consistent version token from asset-release.mjs. Bump the token in all browser imports and HTML entry references for each JS/CSS release; regenerate city guides and run the asset-graph regression before publishing.

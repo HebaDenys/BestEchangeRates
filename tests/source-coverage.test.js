@@ -118,3 +118,32 @@ test('Más real Matriz fixture covers four currencies without treating synthetic
     assert.equal(quotes[0].sourceUpdatedLabel,null);
   }
 });
+
+import { parseUnoBranch } from '../adapters-extra.js';
+const unoBranchContracts = [
+  ['1','Casa Matriz - Regimiento Piribebuy y Paí Pérez','Ciudad del Este',5645],
+  ['2','SUCURSAL N° 4 - PJC','Pedro Juan Caballero',6800],
+  ['3','SUCURSAL N° 7 - SANTA RITA','Santa Rita',5630],
+  ['7','CAJA AUXILIAR N° 8 - CDE UNIAMERICA','Ciudad del Este',5650],
+  ['8','CAJA AUXILIAR N° 10 - PJC','Pedro Juan Caballero',5600],
+  ['15','CAJA AUXILIAR N° 17 - CDE KM4','Ciudad del Este',5650],
+  ['18','CAJA AUXILIAR N° 20 - CAMPO 9','Dr. Juan Eulogio Estigarribia',5580],
+];
+test('Uno seven real branch snapshots preserve exact geography, USD values and currency omissions', () => {
+  for(const [id,branch,city,usdBuy] of unoBranchContracts) {
+    const text=read(`uno/branch-${id}.html`);
+    for(const currency of currencies) {
+      if(id==='7' && ['EUR','ARS'].includes(currency)) {
+        assert.throws(()=>parseUnoBranch(text,currency,id,{DOMParser}),/ausente/);
+        continue;
+      }
+      const quotes=parseUnoBranch(text,currency,id,{DOMParser});
+      assert.deepEqual(quotes.map(identity),[`${branch}|${city}`],`Uno ${id}/${currency} branch coverage drift`);
+      const [q]=quotes;
+      assert.equal(q.branchId,id);assert.equal(q.currency,currency);
+      assert.equal(q.channel,'unspecified');assert.equal(q.sourceUpdatedLabel,null);
+      assert.ok(q.buy>0 && q.sell>=q.buy);
+      if(currency==='USD')assert.equal(q.buy,usdBuy,`Uno ${id}: must use branch price, not Matriz fallback`);
+    }
+  }
+});

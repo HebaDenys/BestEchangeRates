@@ -50,5 +50,6 @@ test('directory separates sixteen institutions from four adapters and does not i
  assert.equal(BANK_PROVIDERS.length,16);assert.equal(new Set(BANK_PROVIDERS.map(p=>p.id)).size,16);
  assert.equal(BANK_PROVIDERS.filter(p=>p.feedStatus==='public_adapter').length,4);
  const brasil=BANK_PROVIDERS.find(p=>p.id==='bancodobrasil');assert.equal(brasil.officialWebsite,null);assert.equal(brasil.url,BANK_REGISTER.url);
- assert.ok(BANK_PROVIDERS.every(p=>p.cities.length===0));
+ assert.equal(BANK_PROVIDERS.filter(p=>p.cities.length>0).length,4);
+ assert.ok(BANK_PROVIDERS.every(p=>p.geographicScope==='bank_publication_unspecified'));
 });

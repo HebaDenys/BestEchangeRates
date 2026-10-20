@@ -26,3 +26,11 @@ Each adapter preserves branch, city, published update text and retrieval time. M
 - House directory now includes 26 verified cities, but this is not 26 cities with automatic prices. Uno extra cities and offices are directory evidence only. Additional Alberdi/Norte/Triple C branch coverage remains unresolved, not silently filled.
 
 Official URLs and verified city-location sources are in `providers.js`. Directory presence means a verified house/location, not an automatic quote. Unsupported branches remain on the official source website. The page does not claim to cover all informal street traders or guarantee the best price in the country.
+
+## Visual audit follow-up
+
+Uno: 16 mapped individual branch endpoints in eight cities, not a shared headquarters rate. Seven authentic branch-response snapshots tested; other transport responses are not assumed successful. Unknown publication times remain explicit.
+
+Geographic inventory: 26 house-directory cities plus 51 bank-directory cities, 56 distinct selector cities. Bank cities are presence/service evidence only. Current house adapters are configured for 16 cities; absent/stale/zero source quotes remain excluded.
+
+The visual audit observed intermittent missing sources and older Reader snapshots. Documented Reader freshness headers, longer bounded timeouts, fair scheduling and per-source diagnostics now address these failure modes; they do not guarantee external-source uptime. Triple C's San Miguel/Shopping Dubai city mapping remains unresolved; Norte direct visual navigation was unavailable during the audit, so no exhaustive visual certification is claimed.

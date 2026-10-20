@@ -7,7 +7,7 @@ import {test,expect} from '@playwright/test';
 // fails when transport fails, rather than presenting parser fixtures as live proof.
 test('new public sources preserve structured content through real browser CORS',async({page})=>{
  test.skip(!process.env.COVERAGE_LIVE,'External public-source reads require explicit opt-in.');
- test.setTimeout(270000);
+ test.setTimeout(330000);
  // Empty, same-origin page avoids triggering the application's full source fanout.
  await page.route('https://hebadenys.github.io/BestEchangeRates/coverage-transport-check',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Coverage transport smoke</title>'}));
  await page.goto('https://hebadenys.github.io/BestEchangeRates/coverage-transport-check');
@@ -15,6 +15,8 @@ test('new public sources preserve structured content through real browser CORS',
   {id:'oriente',url:'https://r.jina.ai/https://www.orientecambios.com.py/',selector:'#panel-004 tr[data-symbol="USD"]'},
   {id:'maxi',url:'https://r.jina.ai/https://www.maxicambios.com.py/',selector:'#cotizacion-carousel .shadow_exchange'},
   {id:'myd',url:'https://r.jina.ai/https://www.mydcambios.com.py/',selector:'.cambios-banner-wrap'},
+  {id:'uno',url:'https://r.jina.ai/https://unocambios.com.py/modelos.php?cotizacion&id_sucursal=1',selector:'table td.moneda'},
+  {id:'ita-refresh',url:'https://r.jina.ai/https://itacambios.com.py/',textIncludes:'Casa - Matriz',force:true},
   {id:'atlas',textIncludes:'ATLAS ONLINE',url:'https://r.jina.ai/https://www.bancoatlas.com.py/'},
   {id:'ueno',textIncludes:'Compra Gs.',url:'https://r.jina.ai/https://www.ueno.com.py/cambio-de-moneda/'},
   {id:'familiar',textIncludes:'Dólar Americano Efectivo',url:'https://r.jina.ai/https://familiar.com.py/cambios'},
@@ -24,7 +26,9 @@ test('new public sources preserve structured content through real browser CORS',
  for(const check of checks){
   const result=await page.evaluate(async check=>{
    try {
-    const response=await fetch(check.url,{headers:check.selector?{'X-Return-Format':'html'}:{},signal:AbortSignal.timeout(30000)});
+    const headers=check.url.startsWith('https://r.jina.ai/') ? {'X-Cache-Tolerance':'60',...(check.force?{'X-No-Cache':'true'}:{})} : {};
+    if(check.selector)headers['X-Return-Format']='html';
+    const response=await fetch(check.url,{headers,signal:AbortSignal.timeout(30000)});
     if(!response.ok)return {ok:false,status:response.status};
     const text=await response.text();
     if(check.selector)return {ok:!!new DOMParser().parseFromString(text,'text/html').querySelector(check.selector),status:response.status};

@@ -35,3 +35,36 @@ test('HTML and markdown representations do not share cached bodies',async()=>{
  assert.equal(await (await reader.read(url,{headers:{'x-return-format':'html'}})).text(),'html');
  assert.equal(calls,2);assert.equal(reader.readings.get(url),12345);
 });
+
+test('Reader refresh bypasses upstream cache, preserves HTML headers and signal, and does not mutate caller headers',async()=>{
+ const calls=[];const fetcher=async(url,options)=>{calls.push({url,options});return {ok:true,text:async()=>'fresh'};};
+ const controller=new AbortController(),headers={'X-Return-Format':'html'};
+ const url='https://r.jina.ai/https://example.org/upstream-freshness';
+ await createSourceReader({fetcher,force:true}).read(url,{signal:controller.signal,headers});
+ assert.equal(calls[0].options.headers.get('x-no-cache'),'true');
+ assert.equal(calls[0].options.headers.get('x-cache-tolerance'),'60');
+ assert.equal(calls[0].options.headers.get('x-return-format'),'html');
+ assert.equal(calls[0].options.signal,controller.signal);assert.deepEqual(headers,{'X-Return-Format':'html'});
+ await createSourceReader({fetcher}).read(url+'-normal');
+ assert.equal(calls[1].options.headers.get('x-cache-tolerance'),'60');
+ assert.equal(calls[1].options.headers.has('x-no-cache'),false);
+});
+test('direct JSON endpoints and lookalike hosts never receive Reader cache headers',async()=>{
+ for(const url of ['https://example.org/rates.json','https://r.jina.ai.example.org/rates.json','https://example.org/?proxy=r.jina.ai']) {
+  const headers={'Accept':'application/json'};let sent;
+  await createSourceReader({force:true,fetcher:async(_url,options)=>{sent=options;return {ok:true,text:async()=>'[]'};}}).read(url,{headers});
+  assert.equal(sent.headers,headers);assert.equal(new Headers(sent.headers).has('x-no-cache'),false);assert.equal(new Headers(sent.headers).has('x-cache-tolerance'),false);
+ }
+});
+test('failure diagnostics use safe categories and fair queue cannot starve banks behind all houses',async()=>{
+ const {sourceFailureReason,fairSourceQueue}=await import('../source-fetch.js');
+ assert.equal(sourceFailureReason(Error('La fuente no respondió (HTTP 429)')),'HTTP 429 · Límite temporal de consultas');
+ assert.equal(sourceFailureReason(Error('<script>secret body</script>')),'Formato de fuente no verificable');
+ assert.equal(sourceFailureReason(new TypeError('Failed to fetch')),'Error de conexión');
+ assert.equal(sourceFailureReason(Error('No hay cotizaciones verificables')),'Sin cotización verificable');
+ assert.equal(sourceFailureReason(Error('Aborted'),{timedOut:true}),'Tiempo de espera agotado');
+ assert.equal(sourceFailureReason(Error('Aborted'),{aborted:true}),'Tiempo de espera agotado');
+ const sources=['house1','house2','house3','bank1','bank2'];
+ assert.deepEqual(fairSourceQueue(sources,value=>value.startsWith('bank')),['house1','bank1','house2','bank2','house3']);
+ assert.deepEqual(sources,['house1','house2','house3','bank1','bank2']);
+});

@@ -15,7 +15,6 @@ const files = {
   'www.fecambios.com.py': 'fe.txt',
   'itacambios.com.py': 'ita.txt',
   'fenixexchange.com.py': 'fenix.txt',
-  'unocambios.com.py': 'extra-uno.txt',
   'www.valor.com.py': 'extra-valor.txt',
   'cambiosrioparana.com.py': 'extra-rioparana.txt',
   'cambiostriplec.com.py': 'extra-triplec.txt',
@@ -24,13 +23,14 @@ const files = {
 
 export const test = base.extend({
   sources: async ({ page }, use) => {
-    const state = { fail: false, norteOnly: false, delayEUR: false, requests: [], unexpected: [], errors: [] };
+    const state = { fail: false, norteOnly: false, delayEUR: false, requests: [], observed: [], unexpected: [], errors: [] };
     // Freeze Date only: cache age is stable, but real request/abort timers still run.
     await page.clock.setFixedTime(new Date('2026-10-20T01:00:00Z'));
     page.on('pageerror', error => state.errors.push(error.message));
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
       if (url.origin === 'http://127.0.0.1:8766') return route.continue();
+      state.observed.push({url:url.href,headers:route.request().headers()});
       if (url.hostname === 'mascambios.com.py' && url.pathname === '/api/cotizaciones.php') {
         state.requests.push(url.href);
         if (state.fail || state.norteOnly || url.searchParams.get('sucursal') !== 'matriz') return route.fulfill({ status:503, body:'Fixture unavailable' });
@@ -46,7 +46,11 @@ export const test = base.extend({
       if (state.delayEUR && source.pathname.endsWith('/EUR')) await new Promise(resolve => setTimeout(resolve, 350));
       if (state.fail || (state.norteOnly && source.hostname !== 'www.nortecambios.com.py')) return route.fulfill({ status: 503, body: 'Fixture unavailable' });
       let body;
-      if (source.hostname === 'www.nortecambios.com.py') body = read(`norte-${source.pathname.split('/').pop().toLowerCase()}-2026-10-20.md`);
+      if (source.hostname === 'unocambios.com.py' && source.pathname === '/modelos.php') {
+        const id=source.searchParams.get('id_sucursal');
+        if (!['1','2','3','7','8','15','18'].includes(id)) return route.fulfill({status:503,body:'No saved real branch fixture'});
+        body=read(`uno/branch-${id}.html`);
+      } else if (source.hostname === 'www.nortecambios.com.py') body = read(`norte-${source.pathname.split('/').pop().toLowerCase()}-2026-10-20.md`);
       else if (source.hostname === 'www.cambiosalberdi.com') {
         // Synthetic branch variants exercise routing, not assertions of real local prices.
         body = read('alberdi-encarnacion.txt').replaceAll('suc=encarnacion', `suc=${source.searchParams.get('suc')}`);

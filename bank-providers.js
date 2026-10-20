@@ -1,3 +1,4 @@
+import {bankLocationsForInstitution} from './bank-locations.js?v=20261020-2';
 // Institution inventory, not a list of working feeds or verified local branches.
 // BCP register checked 2026-10-20; Banco do Brasil has no verified local website here.
 export const BANK_REGISTER={url:'https://www.bcp.gov.py/documents/20117/319021/20260320%2BLISTADO%2BDE%2BENTIDADES%2BSUPERVISADAS.pdf/72d9cd46-9945-f2d2-b40a-d2d5fb34345d?t=1780412378396',date:'2026-03-20',label:'Bancos supervisados por el BCP'};
@@ -19,4 +20,11 @@ const entries=[
  ['zeta','Zeta Banco','https://www.zbanco.com.py/site?page=cotizaciones'],
  ['bnf','Banco Nacional de Fomento','https://www.bnf.gov.py/'],
 ];
-export const BANK_PROVIDERS=entries.map(([id,name,officialWebsite])=>({id,name,url:officialWebsite||BANK_REGISTER.url,officialWebsite,registerUrl:BANK_REGISTER.url,cities:[],institutionType:'bank',geographicScope:'bank_publication_unspecified',feedStatus:['atlas','ueno','familiar','solar'].includes(id)?'public_adapter':'directory_only'}));
+export const BANK_PROVIDERS=entries.map(([id,name,officialWebsite])=>{
+  const locationEvidence=bankLocationsForInstitution(id);
+  // Directory presence is independent of the quote's unspecified geographic scope.
+  return {id,name,url:officialWebsite||BANK_REGISTER.url,officialWebsite,registerUrl:BANK_REGISTER.url,
+    cities:locationEvidence.map(record=>record.city),locationEvidence,
+    institutionType:'bank',geographicScope:'bank_publication_unspecified',
+    feedStatus:['atlas','ueno','familiar','solar'].includes(id)?'public_adapter':'directory_only'};
+});
