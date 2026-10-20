@@ -1,4 +1,4 @@
-import { parseGuarani, proxyUrl, CURRENCIES } from './rates.js';
+import { parseGuarani, proxyUrl, CURRENCIES } from './rates.js?v=20261020-1';
 
 const BONANZA_BRANCHES = [
   ['Casa Matriz', 'Ciudad del Este'], ['Jebai', 'Ciudad del Este'],

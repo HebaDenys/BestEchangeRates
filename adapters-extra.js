@@ -1,4 +1,4 @@
-import {parseGuarani,proxyUrl,CURRENCIES} from './rates.js';
+import {parseGuarani,proxyUrl,CURRENCIES} from './rates.js?v=20261020-1';
 const strip=s=>s.replace(/!\[[^\]]*\]\([^)]*\)/g,'').trim();
 const cells=s=>s.trim().split('|').slice(1,-1).map(strip);
 function number(s,c){s=strip(s);if(c==='ARS' && /^\d+\.\d{1,3}$/.test(s))return Number(s);return parseGuarani(s);}

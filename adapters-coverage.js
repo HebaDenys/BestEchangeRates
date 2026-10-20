@@ -1,4 +1,4 @@
-import {CURRENCIES, proxyUrl} from './rates.js';
+import {CURRENCIES, proxyUrl} from './rates.js?v=20261020-1';
 
 // Public structured pages, checked 2026-10-20. Never infer branch prices from
 // directory presence. DOMParser is native in browsers; tests inject jsdom's parser.
