@@ -44,7 +44,7 @@ test('Reader refresh bypasses upstream cache, preserves HTML headers and signal,
  assert.equal(calls[0].options.headers.get('x-no-cache'),'true');
  assert.equal(calls[0].options.headers.get('x-cache-tolerance'),'60');
  assert.equal(calls[0].options.headers.get('x-return-format'),'html');
- assert.equal(calls[0].options.signal,controller.signal);assert.deepEqual(headers,{'X-Return-Format':'html'});
+ assert.ok(calls[0].options.signal instanceof AbortSignal);assert.equal(calls[0].options.signal.aborted,false);assert.deepEqual(headers,{'X-Return-Format':'html'});
  await createSourceReader({fetcher}).read(url+'-normal');
  assert.equal(calls[1].options.headers.get('x-cache-tolerance'),'60');
  assert.equal(calls[1].options.headers.has('x-no-cache'),false);
@@ -67,4 +67,57 @@ test('failure diagnostics use safe categories and fair queue cannot starve banks
  const sources=['house1','house2','house3','bank1','bank2'];
  assert.deepEqual(fairSourceQueue(sources,value=>value.startsWith('bank')),['house1','bank1','house2','bank2','house3']);
  assert.deepEqual(sources,['house1','house2','house3','bank1','bank2']);
+});
+
+test('Reader retries one 429 after Retry-After, timestamps only the successful completed body',async()=>{
+ let clock=1000,calls=0;const waits=[];
+ const reader=createSourceReader({force:true,now:()=>clock,wait:async(ms)=>{waits.push(ms);clock+=ms;},fetcher:async()=>{
+  calls++;return calls===1 ? {ok:false,status:429,headers:new Headers({'Retry-After':'2'})} : {ok:true,status:200,text:async()=>{clock+=5;return 'updated';}};
+ }});
+ const url='https://r.jina.ai/https://example.org/retry-ok';
+ assert.equal(await (await reader.read(url)).text(),'updated');assert.equal(calls,2);assert.deepEqual(waits,[2000]);assert.equal(reader.readings.get(url),3005);
+});
+test('retry delay parses seconds and HTTP dates, defaults missing header to sixty seconds, rejects excessive or malformed delays',async()=>{
+ const {retryAfterDelay}=await import('../source-fetch.js');
+ const now=Date.parse('Tue, 20 Oct 2026 12:00:00 GMT');
+ assert.equal(retryAfterDelay('12',now),12000);
+ assert.equal(retryAfterDelay('Tue, 20 Oct 2026 12:00:30 GMT',now),30000);
+ assert.equal(retryAfterDelay(undefined,now),60000);
+ for(const value of ['61','-1','garbage','Tue, 20 Oct 2026 12:02:00 GMT']) assert.equal(retryAfterDelay(value,now),null);
+});
+test('persistent 429 only retries once and no forbidden, excessive-delay, or direct API response retries',async()=>{
+ for(const [url,status,retryAfter,expected] of [
+  ['https://r.jina.ai/https://example.org/retry-limit',429,undefined,2],
+  ['https://r.jina.ai/https://example.org/retry-forbidden',403,'1',1],
+  ['https://r.jina.ai/https://example.org/retry-excessive',429,'120',1],
+  ['https://example.org/direct-retry.json',429,'1',1]
+ ]) {
+  let calls=0,waits=0;const reader=createSourceReader({force:true,wait:async()=>{waits++;},fetcher:async()=>{calls++;return {ok:false,status,headers:retryAfter ? new Headers({'Retry-After':retryAfter}) : undefined};}});
+  assert.equal((await reader.read(url)).status,status);assert.equal(calls,expected);assert.equal(waits,expected-1);assert.equal(reader.readings.size,0);
+ }
+});
+test('abort during rate-limit wait prevents retry and old cached value is not restored',async()=>{
+ const {waitForRetry}=await import('../source-fetch.js');const controller=new AbortController();let calls=0;
+ const url='https://r.jina.ai/https://example.org/retry-abort';
+ await createSourceReader({fetcher:async()=>({ok:true,text:async()=>'old'})}).read(url);
+ const reader=createSourceReader({force:true,wait:(ms,options)=>{queueMicrotask(()=>controller.abort());return waitForRetry(ms,options);},fetcher:async()=>{calls++;return {ok:false,status:429};}});
+ await assert.rejects(reader.read(url,{signal:controller.signal}),{name:'AbortError'});
+ assert.equal(calls,1);assert.equal(reader.readings.size,0);
+ let nextCalls=0;await createSourceReader({fetcher:async()=>{nextCalls++;return {ok:false,status:503};}}).read(url);assert.equal(nextCalls,1);
+});
+test('network and body timeouts abort attempt, never retry or publish late results',async()=>{
+ for(const bodyStalls of [false,true]) {
+  let calls=0,seenSignal,resolveLate;
+  const late=new Promise(resolve=>{resolveLate=resolve;});
+  const reader=createSourceReader({force:true,attemptTimeoutMs:10,fetcher:async(_url,{signal})=>{calls++;seenSignal=signal;if(!bodyStalls)await late;return {ok:true,text:async()=>{if(bodyStalls)await late;return 'too late';}};}});
+  await assert.rejects(reader.read(`https://r.jina.ai/https://example.org/attempt-timeout-${bodyStalls}`),{name:'TimeoutError'});
+  assert.equal(calls,1);assert.equal(seenSignal.aborted,true);assert.equal(reader.readings.size,0);
+  resolveLate();await new Promise(resolve=>setTimeout(resolve,0));assert.equal(reader.readings.size,0);
+ }
+});
+test('parent cancellation promptly aborts an in-flight network attempt',async()=>{
+ const controller=new AbortController();let seenSignal;
+ const reader=createSourceReader({fetcher:async(_url,{signal})=>{seenSignal=signal;queueMicrotask(()=>controller.abort());return new Promise(()=>{});}});
+ await assert.rejects(reader.read('https://example.org/parent-abort',{signal:controller.signal}),{name:'AbortError'});
+ assert.equal(seenSignal.aborted,true);assert.equal(reader.readings.size,0);
 });

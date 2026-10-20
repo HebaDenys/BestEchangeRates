@@ -23,7 +23,7 @@ const files = {
 
 export const test = base.extend({
   sources: async ({ page }, use) => {
-    const state = { fail: false, norteOnly: false, delayEUR: false, requests: [], observed: [], unexpected: [], errors: [] };
+    const state = { fail: false, norteOnly: false, norteRateLimits: 0, delayEUR: false, requests: [], observed: [], unexpected: [], errors: [] };
     // Freeze Date only: cache age is stable, but real request/abort timers still run.
     await page.clock.setFixedTime(new Date('2026-10-20T01:00:00Z'));
     page.on('pageerror', error => state.errors.push(error.message));
@@ -43,6 +43,10 @@ export const test = base.extend({
       }
       state.requests.push(url.href);
       const source = new URL(url.href.slice('https://r.jina.ai/'.length));
+      if (source.hostname === 'www.nortecambios.com.py' && state.norteRateLimits > 0) {
+        state.norteRateLimits--;
+        return route.fulfill({status:429,headers:{'Retry-After':'0','Access-Control-Expose-Headers':'Retry-After'},body:'Fixture rate limit'});
+      }
       if (state.delayEUR && source.pathname.endsWith('/EUR')) await new Promise(resolve => setTimeout(resolve, 350));
       if (state.fail || (state.norteOnly && source.hostname !== 'www.nortecambios.com.py')) return route.fulfill({ status: 503, body: 'Fixture unavailable' });
       let body;

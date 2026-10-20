@@ -422,3 +422,24 @@ test('Reader freshness headers apply to default and forced requests but never di
     expect(headers['x-return-format']).toBeUndefined();
   }
 });
+
+test('Reader 429 retries once, recovers normally and stops after a second rate limit', async ({ page, sources }) => {
+  sources.norteOnly=true;
+  sources.norteRateLimits=1;
+  const norteRequests=()=>sources.requests.filter(url=>url.includes('www.nortecambios.com.py/'));
+  await open(page);
+  expect(norteRequests()).toHaveLength(2);
+  await expect(page.locator('#quotes .quote:not(.previous)')).toHaveCount(1);
+  await expect(page.locator('#quotes .previous')).toHaveCount(0);
+  await expect(page.locator('#bestTotal')).toHaveText('₲ 565.000');
+  await verifyRanking(page,'sell');
+  sources.norteRateLimits=2;
+  await page.locator('#fetchBtn').click(); await settled(page);
+  expect(norteRequests()).toHaveLength(4);
+  expect(sources.norteRateLimits).toBe(0);
+  await expect(page.locator('#quotes .quote:not(.previous)')).toHaveCount(0);
+  await expect(page.locator('#quotes .previous')).toHaveCount(1);
+  await expect(page.locator('#bestTotal')).toHaveText('—');
+  await expect(page.locator('#sourceDiagnostics')).toContainText('HTTP 429');
+  await expect(page.locator('#sourceDiagnostics')).not.toContainText('Fixture rate limit');
+});

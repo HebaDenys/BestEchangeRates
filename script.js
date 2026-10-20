@@ -1,14 +1,14 @@
-import {compareQuotes} from './comparison.js?v=20261020-2';
-import {branchLocation} from './branch-locations.js?v=20261020-2';
-import { SOURCES, NORTE_CITIES, fetchSource, calculate, proxyUrl } from './rates.js?v=20261020-2';
-import { PROVIDERS, REGISTER } from './providers.js?v=20261020-2';
-import { EXTRA_SOURCES } from './adapters.js?v=20261020-2';
-import {MORE_SOURCES} from './adapters-extra.js?v=20261020-2';
-import {COVERAGE_SOURCES} from './adapters-coverage.js?v=20261020-2';
-import {BANK_SOURCES} from './adapters-banks.js?v=20261020-2';
-import {BANK_PROVIDERS} from './bank-providers.js?v=20261020-2';
-import {CHANNELS, isBankQuote, quoteChannel, matchesChannel, matchesCity, readSelection, savePreferences, shareUrl} from './selection.js?v=20261020-2';
-import {createSourceReader,sourceFailureReason,fairSourceQueue} from './source-fetch.js?v=20261020-2';
+import {compareQuotes} from './comparison.js?v=20261020-3';
+import {branchLocation} from './branch-locations.js?v=20261020-3';
+import { SOURCES, NORTE_CITIES, fetchSource, calculate, proxyUrl } from './rates.js?v=20261020-3';
+import { PROVIDERS, REGISTER } from './providers.js?v=20261020-3';
+import { EXTRA_SOURCES } from './adapters.js?v=20261020-3';
+import {MORE_SOURCES} from './adapters-extra.js?v=20261020-3';
+import {COVERAGE_SOURCES} from './adapters-coverage.js?v=20261020-3';
+import {BANK_SOURCES} from './adapters-banks.js?v=20261020-3';
+import {BANK_PROVIDERS} from './bank-providers.js?v=20261020-3';
+import {CHANNELS, isBankQuote, quoteChannel, matchesChannel, matchesCity, readSelection, savePreferences, shareUrl} from './selection.js?v=20261020-3';
+import {createSourceReader,sourceFailureReason,fairSourceQueue} from './source-fetch.js?v=20261020-3';
 const $ = id => document.getElementById(id);
 const format = value => new Intl.NumberFormat('es-PY', { maximumFractionDigits: 2 }).format(value);
 const differenceLabel = value => value > 0 && value < 0.01 ? 'menos de ₲ 0,01' : `₲ ${format(value)}`;
@@ -158,7 +158,7 @@ async function refresh(force=false) {
   controller?.abort(); controller = new AbortController();
   const current = ++request, currency = $('currencySelect').value, city = $('citySelect').value;
   const signal=controller.signal, currentController=controller;
-  const timeout = setTimeout(() => currentController.abort(), 90000);
+  const timeout = setTimeout(() => currentController.abort(), 120000);
   const active = sources.filter(source => (!source.supportedCurrencies || source.supportedCurrencies.includes(currency)) && (BANK_SOURCES.includes(source) || !city || source.cities?.includes(city)));
   const resultBySource = new Map();
   quotes=[]; updateOptions(); renderDirectory(); renderQuotes([]);
@@ -205,7 +205,7 @@ async function refresh(force=false) {
       const cancelSource=()=>sourceController.abort();
       signal.addEventListener('abort',cancelSource,{once:true});
       let timedOut=false;
-      const sourceTimeout=setTimeout(()=>{timedOut=true;cancelSource();},25000);
+      const sourceTimeout=setTimeout(()=>{timedOut=true;cancelSource();},90000);
       try {
         const reader=createSourceReader({force});
         const items=(await source.fetch(currency,{signal:sourceController.signal,city:BANK_SOURCES.includes(source)?undefined:city,fetcher:reader.read})).map(quote=>({...quote,retrievedAt: reader.readings.has(quote.url) ? new Date(reader.readings.get(quote.url)).toISOString() : reader.readings.has(proxyUrl(quote.url)) ? new Date(reader.readings.get(proxyUrl(quote.url))).toISOString() : quote.retrievedAt})).filter(quote => quote.currency===currency && matchesCity(quote,city));

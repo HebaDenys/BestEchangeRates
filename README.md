@@ -37,7 +37,7 @@ Optional bounded published-site smoke: `npm run test:e2e:live`. This performs on
 - PYG periods group thousands and commas mark decimals: `7.300` means 7300, not 7.3. Non-positive, malformed, duplicate, crossed-currency and inverted prices fail closed.
 - Compra means the house buys the user's currency; Venta means it sells. Cards are sorted by highest buy or lowest sell among available readings, not a market-wide best-price guarantee.
 - A 60-second in-memory raw-page cache reduces repeated Jina reads when changing city/currency. Cached quotes keep the actual network retrieval timestamp. Explicit Actualizar bypasses this cache; errors are not cached.
-- Three source workers run concurrently, with 25-second per-source and 90-second overall time limits. Río Paraná, Triple C and Mercosur reject timestamps older than four days or materially in the future, and Mercosur conflicting duplicate rows are omitted rather than guessed.
+- Three source workers run concurrently, with 25-second network-attempt, 90-second per-source and 120-second overall time limits. Río Paraná, Triple C and Mercosur reject timestamps older than four days or materially in the future, and Mercosur conflicting duplicate rows are omitted rather than guessed.
 - Rates render progressively as sources respond. Request generation and abort handling prevent older city/currency requests replacing the current selection. Previous readings are isolated by provider/currency/city and visibly labeled; they do not drive automatic calculations after refresh failure. No rate data is persisted between sessions.
 - Manual calculator rates are explicitly user-entered and reset on city/currency/operation changes. Calculation happens locally and excludes fees.
 
@@ -76,3 +76,5 @@ Bank location evidence contains 106 institution-city records across 51 cities. T
 Reader requests set documented X-Cache-Tolerance:60; Actualizar adds X-No-Cache:true. These headers are not sent to direct APIs. Interleaved fetching prevents banks from always sitting behind the full house queue. Safe, collapsed diagnostics distinguish HTTP errors, timeouts and unverifiable source formats. Failed or previously read quotes never become current winners. The best result visibly reports an unknown source publication date when necessary.
 
 Application JS/CSS references use a consistent version token from asset-release.mjs. Bump the token in all browser imports and HTML entry references for each JS/CSS release; regenerate city guides and run the asset-graph regression before publishing.
+
+Reader HTTP429 has at most one abortable retry, respecting Retry-After up to60seconds (60seconds if absent). Excessive/malformed delays, a second429, HTTP403 and network timeouts remain visible failures. The network/body timeout is separate from the retry wait; no denial is bypassed and no alternate route is attempted.
