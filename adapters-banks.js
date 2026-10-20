@@ -1,4 +1,4 @@
-import {CURRENCIES, parseGuarani, proxyUrl} from './rates.js?v=20261020-3';
+import {CURRENCIES, parseGuarani, proxyUrl} from './rates.js?v=20261020-4';
 
 export const BANK_CHANNEL_LABELS = Object.freeze({cash:'Efectivo', online:'Online', app:'App', transfer:'Transferencia', cheque:'Cheque', cheque_transfer:'Cheque / transferencia', unspecified:'Canal no especificado'});
 const SCOPE='bank_publication_unspecified';
@@ -73,7 +73,8 @@ function source(id,name,url,parser){
  return source;
 }
 export const BANK_SOURCES=[
- source('atlas','Banco Atlas','https://www.bancoatlas.com.py/',parseAtlas),
+ // Root runs a client-side redirect to /web; use its verified public destination.
+ source('atlas','Banco Atlas','https://www.bancoatlas.com.py/web',parseAtlas),
  source('ueno','Ueno Bank','https://www.ueno.com.py/cambio-de-moneda/',parseUeno),
  source('familiar','Banco Familiar','https://familiar.com.py/cambios',parseFamiliar),
  source('solar','Solar Banco','https://www.solar.com.py/',parseSolar),
