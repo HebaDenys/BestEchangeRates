@@ -1,4 +1,4 @@
-import {calculate} from './rates.js?v=20261020-3';
+import {calculate} from './rates.js?v=20261020-4';
 /** Only current, valid published quotes compete. Manual references never enter here. */
 export function compareQuotes(quotes, amount, operation) {
   if (!['sell','buy'].includes(operation)) return [];

@@ -53,3 +53,18 @@ test('directory separates sixteen institutions from four adapters and does not i
  assert.equal(BANK_PROVIDERS.filter(p=>p.cities.length>0).length,4);
  assert.ok(BANK_PROVIDERS.every(p=>p.geographicScope==='bank_publication_unspecified'));
 });
+
+test('Atlas fetches the verified public destination without the root JS navigation',async()=>{
+ const source=BANK_SOURCES.find(s=>s.id==='atlas');
+ assert.equal(source.url,'https://www.bancoatlas.com.py/web');
+ assert.equal(BANK_PROVIDERS.find(p=>p.id==='atlas').url,source.url);
+ const text=readFileSync(new URL('./fixtures/bank-atlas-web-2026-10-20.txt',import.meta.url),'utf8');
+ for(const currency of source.supportedCurrencies){
+  let requested;
+  const quotes=await source.fetch(currency,{fetcher:async url=>{requested=url;return {ok:true,text:async()=>text};}});
+  assert.equal(requested,'https://r.jina.ai/https://www.bancoatlas.com.py/web');
+  assert.deepEqual(quotes.map(q=>q.channel),['cash','cheque','online']);
+  assert.equal(quotes.length,3);
+ }
+ assert.deepEqual(parseAtlas(text,'USD').map(q=>[q.channel,q.buy,q.sell]),[['cash',5630,5890],['cheque',5640,5880],['online',5650,5870]]);
+});
