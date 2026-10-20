@@ -1,5 +1,6 @@
 /** Amounts are PYG per one foreign currency unit. No reference FX conversion. */
 export const CURRENCIES = ['USD', 'EUR', 'ARS', 'BRL'];
+export const NORTE_CITIES = ['Asunción', 'Pedro Juan Caballero', 'Ciudad del Este', 'Bella Vista Norte', 'Capitán Bado', 'Concepción', 'Salto del Guairá'];
 export const SOURCES = [{ id: 'norte', name: 'Norte Cambios', url: 'https://www.nortecambios.com.py/' }];
 
 export function parseGuarani(value) {
@@ -66,13 +67,15 @@ export function parseNorteCurrency(text, currency) {
     const cells = line.trim().split('|').slice(1, -1).map(cell => cell.trim());
     if (cells.length !== 3) continue;
     const branch = cells[0].match(/^\[([^\]]+)\]\(/)?.[1];
-    if (branch !== 'Asunción') continue;
+    const city = branch === 'Saltos del Guairá' ? 'Salto del Guairá' : branch;
+    if (!NORTE_CITIES.includes(city)) continue;
+    if (quotes.some(quote => quote.branch === branch)) throw new Error('Sucursal duplicada');
     const buy = parseGuarani(cells[1]);
     const sell = parseGuarani(cells[2]);
     if (sell < buy) throw new Error('Compra y venta inconsistentes');
-    quotes.push({ branch, currency, buy, sell, sourceUpdatedLabel: text.match(/^Actualizado[^\n]*$/im)?.[0]?.trim() || null });
+    quotes.push({ branch, city, currency, buy, sell, sourceUpdatedLabel: text.match(/^Actualizado[^\n]*$/im)?.[0]?.trim() || null });
   }
-  if (quotes.length !== 1) throw new Error('No hay una cotización única y verificable de Asunción');
+  if (!quotes.length) throw new Error('No hay cotizaciones de ciudades verificadas');
   return quotes;
 }
 
