@@ -1,14 +1,14 @@
-import {compareQuotes} from './comparison.js?v=20261020-1';
-import {branchLocation} from './branch-locations.js?v=20261020-1';
-import { SOURCES, NORTE_CITIES, fetchSource, calculate, proxyUrl } from './rates.js?v=20261020-1';
-import { PROVIDERS, REGISTER } from './providers.js?v=20261020-1';
-import { EXTRA_SOURCES } from './adapters.js?v=20261020-1';
-import {MORE_SOURCES} from './adapters-extra.js?v=20261020-1';
-import {COVERAGE_SOURCES} from './adapters-coverage.js?v=20261020-1';
-import {BANK_SOURCES} from './adapters-banks.js?v=20261020-1';
-import {BANK_PROVIDERS} from './bank-providers.js?v=20261020-1';
-import {CHANNELS, isBankQuote, quoteChannel, matchesChannel, matchesCity, readSelection, savePreferences, shareUrl} from './selection.js?v=20261020-1';
-import {createSourceReader} from './source-fetch.js?v=20261020-1';
+import {compareQuotes} from './comparison.js?v=20261020-2';
+import {branchLocation} from './branch-locations.js?v=20261020-2';
+import { SOURCES, NORTE_CITIES, fetchSource, calculate, proxyUrl } from './rates.js?v=20261020-2';
+import { PROVIDERS, REGISTER } from './providers.js?v=20261020-2';
+import { EXTRA_SOURCES } from './adapters.js?v=20261020-2';
+import {MORE_SOURCES} from './adapters-extra.js?v=20261020-2';
+import {COVERAGE_SOURCES} from './adapters-coverage.js?v=20261020-2';
+import {BANK_SOURCES} from './adapters-banks.js?v=20261020-2';
+import {BANK_PROVIDERS} from './bank-providers.js?v=20261020-2';
+import {CHANNELS, isBankQuote, quoteChannel, matchesChannel, matchesCity, readSelection, savePreferences, shareUrl} from './selection.js?v=20261020-2';
+import {createSourceReader,sourceFailureReason,fairSourceQueue} from './source-fetch.js?v=20261020-2';
 const $ = id => document.getElementById(id);
 const format = value => new Intl.NumberFormat('es-PY', { maximumFractionDigits: 2 }).format(value);
 const differenceLabel = value => value > 0 && value < 0.01 ? 'menos de ₲ 0,01' : `₲ ${format(value)}`;
@@ -33,7 +33,17 @@ function link(text,url) {
 }
 function renderDirectory() {
   const city = $('citySelect').value;
-  $('bankDirectory').replaceChildren(...BANK_PROVIDERS.map(provider=>{ const item=element('article',undefined,'directory-item'); item.append(link(`${provider.name}${provider.officialWebsite ? '' : ' · Registro BCP'} ↗`,provider.url),element('p',provider.feedStatus==='public_adapter' ? 'Consulta automática · Sin sucursal asignada' : 'Solo directorio · Sin precio automático','hint')); return item; }));
+  $('bankDirectory').replaceChildren(...BANK_PROVIDERS.map(provider=>{
+    const item=element('article',undefined,'directory-item');
+    item.append(link(`${provider.name}${provider.officialWebsite ? '' : ' · Registro BCP'} ↗`,provider.url),element('p',provider.feedStatus==='public_adapter' ? 'Consulta automática · Sin sucursal asignada' : 'Solo directorio · Sin precio automático','hint'));
+    const locations=(provider.locationEvidence || []).filter(record=>!city || record.city===city);
+    if(locations.length) {
+      const detail=element('details',undefined,'quote-meta'); detail.append(element('summary',city ? `Presencia en ${city}` : `${locations.length} ciudades verificadas`));
+      for(const record of locations) { const line=element('p',`${record.city}: ${record.fxServiceExplicit ? 'Servicio de cambio indicado' : 'Sede bancaria; cambio no confirmado'} · `); line.append(link('Directorio oficial',record.officialUrl)); detail.append(line); }
+      detail.append(element('p','La publicación bancaria no confirma el precio de esta sede.','hint')); item.append(detail);
+    }
+    return item;
+  }));
   const items = PROVIDERS.filter(provider => city === '' || provider.cities.includes(city));
   $('directoryCount').textContent = `${items.length} ${items.length===1 ? 'casa' : 'casas'}`;
   $('directoryNote').textContent = city ? `Sitios oficiales en ${city}.` : 'Casas verificadas de Paraguay · Sitios oficiales';
@@ -69,6 +79,10 @@ function renderBest(rows) {
   $('bestIdentity').textContent = best ? `${best.quote.sourceName} · ${branchLabel(best.quote)}${ties>1 ? ` · Empate entre ${ties} opciones` : ''}` : 'Sin cotizaciones disponibles para esta selección.';
   const next = rows.find(row=>!row.best);
   $('bestExplanation').textContent = !best ? 'Probá otro canal, ciudad o moneda. Las publicaciones bancarias se muestran por separado abajo.' : best.total === null ? 'Ingresá un importe mayor que cero y de hasta 1 billón para comparar los totales.' : next ? `${operation==='sell' ? 'Recibís' : 'Pagás'} ${differenceLabel(next.difference)} ${operation==='sell' ? 'más' : 'menos'} que con la siguiente cotización distinta.${ties>1 ? ' Las primeras opciones tienen el mismo precio.' : ''}` : ties>1 ? 'Las opciones disponibles tienen el mismo precio.' : 'Solo hay una cotización disponible: todavía no hay otra con la que comparar.';
+  let freshness=$('bestFreshness');
+  if(!freshness) { freshness=element('p',undefined,'hint'); freshness.id='bestFreshness'; $('bestIdentity').after(freshness); }
+  freshness.hidden=!best;
+  freshness.textContent=best ? (best.quote.sourceUpdatedLabel || 'Fecha de publicación no indicada') : '';
   if(best) $('bestDirections').append(directions(best.quote));
 }
 function renderQuotes(items) {
@@ -144,12 +158,15 @@ async function refresh(force=false) {
   controller?.abort(); controller = new AbortController();
   const current = ++request, currency = $('currencySelect').value, city = $('citySelect').value;
   const signal=controller.signal, currentController=controller;
-  const timeout = setTimeout(() => currentController.abort(), 45000);
+  const timeout = setTimeout(() => currentController.abort(), 90000);
   const active = sources.filter(source => (!source.supportedCurrencies || source.supportedCurrencies.includes(currency)) && (BANK_SOURCES.includes(source) || !city || source.cities?.includes(city)));
   const resultBySource = new Map();
   quotes=[]; updateOptions(); renderDirectory(); renderQuotes([]);
   $('bankQuotes').setAttribute('aria-busy','true'); $('quotes').setAttribute('aria-busy','true'); $('fetchBtn').disabled=true; $('fetchBtn').textContent='Consultando…';
   $('status').className='status'; $('status').textContent=`Consultando ${currency}…`;
+  let diagnostics=$('sourceDiagnostics');
+  if(!diagnostics) { diagnostics=element('details',undefined,'quote-meta'); diagnostics.id='sourceDiagnostics'; $('status').after(diagnostics); }
+  diagnostics.hidden=true; diagnostics.replaceChildren();
   $('bestIdentity').textContent='Consultando las fuentes de tu selección…';
   $('bestExplanation').textContent='Los resultados aparecen a medida que responden las fuentes.';
   function showResults() {
@@ -161,6 +178,15 @@ async function refresh(force=false) {
       else if (result && previous.has(key)) displayed.push(...previous.get(key).map(quote=>({...quote,stale:true})));
     }
     renderQuotes(displayed); updateOptions();
+    const failed=active.filter(source=>resultBySource.get(source.id)?.ok===false);
+    diagnostics.hidden=!failed.length;
+    diagnostics.replaceChildren(element('summary',`Detalle de ${failed.length} fuentes sin precio`));
+    for(const source of failed) {
+      const result=resultBySource.get(source.id),line=element('p');
+      const url=source.url || PROVIDERS.find(provider=>provider.id===source.id)?.url;
+      line.append(url ? link(source.name,url) : element('span',source.name),document.createTextNode(`: ${result.skipped ? 'Sin consultar · Tiempo total agotado' : result.reason}`));
+      diagnostics.append(line);
+    }
     const pending=active.length-resultBySource.size;
     const failures=[...resultBySource.values()].filter(result=>!result.ok && !result.skipped).length;
     const skipped=[...resultBySource.values()].filter(result=>result.skipped).length;
@@ -171,14 +197,15 @@ async function refresh(force=false) {
   }
   refreshStatus=showResults;
   try {
-    const queue=[...active];
+    const queue=fairSourceQueue(active,source=>BANK_SOURCES.includes(source));
     await Promise.allSettled(Array.from({length:Math.min(3,active.length)},async()=>{
      while(queue.length && !signal.aborted && current===request) {
       const source=queue.shift();
       const sourceController=new AbortController();
       const cancelSource=()=>sourceController.abort();
       signal.addEventListener('abort',cancelSource,{once:true});
-      const sourceTimeout=setTimeout(cancelSource,12000);
+      let timedOut=false;
+      const sourceTimeout=setTimeout(()=>{timedOut=true;cancelSource();},25000);
       try {
         const reader=createSourceReader({force});
         const items=(await source.fetch(currency,{signal:sourceController.signal,city:BANK_SOURCES.includes(source)?undefined:city,fetcher:reader.read})).map(quote=>({...quote,retrievedAt: reader.readings.has(quote.url) ? new Date(reader.readings.get(quote.url)).toISOString() : reader.readings.has(proxyUrl(quote.url)) ? new Date(reader.readings.get(proxyUrl(quote.url))).toISOString() : quote.retrievedAt})).filter(quote => quote.currency===currency && matchesCity(quote,city));
@@ -186,7 +213,7 @@ async function refresh(force=false) {
         if(!items.length) throw new Error('Sin cotización para esta ciudad');
         resultBySource.set(source.id,{ok:true,items});
         previous.set(`${source.id}:${currency}:${city}`,items);
-      } catch { if(current!==request) return; resultBySource.set(source.id,{ok:false}); }
+      } catch(error) { if(current!==request) return; resultBySource.set(source.id,{ok:false,reason:sourceFailureReason(error,{timedOut,aborted:signal.aborted})}); }
       finally { clearTimeout(sourceTimeout); signal.removeEventListener('abort',cancelSource); }
       if(current===request) showResults();
      }
@@ -197,7 +224,7 @@ async function refresh(force=false) {
     if(current===request) { $('bankQuotes').setAttribute('aria-busy','false'); $('quotes').setAttribute('aria-busy','false'); $('fetchBtn').disabled=false; $('fetchBtn').textContent='Actualizar'; }
   }
 }
-const cities=[...new Set([...NORTE_CITIES,...PROVIDERS.flatMap(provider=>provider.cities),...sources.flatMap(source=>source.cities||[])])].sort((a,b)=>a.localeCompare(b,'es'));
+const cities=[...new Set([...NORTE_CITIES,...PROVIDERS.flatMap(provider=>provider.cities),...BANK_PROVIDERS.flatMap(provider=>provider.cities),...sources.flatMap(source=>source.cities||[])])].sort((a,b)=>a.localeCompare(b,'es'));
 $('citySelect').replaceChildren(new Option('Todas las ciudades',''),...cities.map(city=>new Option(city,city)));
 $('channelSelect').replaceChildren(...Object.entries(CHANNELS).map(([value,label])=>new Option(label,value)));
 const initial=readSelection({search:view?.location?.search,storage:localStorageSafe(),cities});
