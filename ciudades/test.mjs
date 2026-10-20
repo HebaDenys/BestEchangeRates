@@ -24,7 +24,7 @@ for(const file of readdirSync(root+'ciudades').filter(file=>file.endsWith('.html
    const url=new URL(href,base+'ciudades/'+file);
    const target=resolve(root,url.pathname.slice('/BestEchangeRates/'.length));
    assert.ok(existsSync(target)||existsSync(resolve(target,'index.html')),href);
-   if(url.search){
+   if(url.search && element.matches('a')){
     assert.equal(url.searchParams.get('city'),cities[file]);
     assert.ok(['USD','BRL','ARS','EUR'].includes(url.searchParams.get('currency')));
     assert.ok(['buy','sell'].includes(url.searchParams.get('operation')));

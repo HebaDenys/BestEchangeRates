@@ -2,6 +2,7 @@
 // Run from any directory: node ciudades/build.mjs
 import {writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
+import {ASSET_RELEASE} from '../asset-release.mjs';
 import {PROVIDERS} from '../providers.js';
 const base = 'https://hebadenys.github.io/BestEchangeRates/';
 const dir = fileURLToPath(new URL('./', import.meta.url));
@@ -14,7 +15,7 @@ const cities = [
 const currencies = [['USD','dólares'],['BRL','reales'],['ARS','pesos argentinos'],['EUR','euros']];
 const query = (city,currency,operation='buy') => '../?' + new URLSearchParams({city,currency,operation,amount:'100',channel:'unspecified'});
 const head = (title,description,path) => `<!doctype html>
-<html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)} · Cambio Claro</title><meta name="description" content="${escape(description)}"><meta name="theme-color" content="#113d35"><link rel="canonical" href="${base}${path}"><link rel="stylesheet" href="guide.css"></head><body><a class="skip-link" href="#main">Saltar al contenido</a><header><a class="brand" href="../">⇄ Cambio Claro</a><span>Paraguay · Guaraníes</span></header>`;
+<html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)} · Cambio Claro</title><meta name="description" content="${escape(description)}"><meta name="theme-color" content="#113d35"><link rel="canonical" href="${base}${path}"><link rel="stylesheet" href="guide.css?v=${ASSET_RELEASE}"></head><body><a class="skip-link" href="#main">Saltar al contenido</a><header><a class="brand" href="../">⇄ Cambio Claro</a><span>Paraguay · Guaraníes</span></header>`;
 const foot = `<footer><p><a href="../">Volver al comparador</a> · <a href="./">Guías por ciudad</a> · <a href="https://github.com/HebaDenys/BestEchangeRates/issues">Informar un problema</a></p><p>Información orientativa, no una oferta de cambio. Confirmá precio, comisiones y disponibilidad con el proveedor.</p></footer></body></html>\n`;
 for(const city of cities) {
  const providers=PROVIDERS.filter(provider=>provider.cities.includes(city.name)).sort((a,b)=>a.name.localeCompare(b.name,'es'));

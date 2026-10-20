@@ -1,4 +1,4 @@
-import {CURRENCIES, parseGuarani, proxyUrl} from './rates.js';
+import {CURRENCIES, parseGuarani, proxyUrl} from './rates.js?v=20261020-1';
 
 export const BANK_CHANNEL_LABELS = Object.freeze({cash:'Efectivo', online:'Online', app:'App', transfer:'Transferencia', cheque:'Cheque', cheque_transfer:'Cheque / transferencia', unspecified:'Canal no especificado'});
 const SCOPE='bank_publication_unspecified';
