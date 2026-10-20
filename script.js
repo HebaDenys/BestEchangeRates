@@ -1,3 +1,5 @@
+import {compareQuotes} from './comparison.js';
+import {branchLocation} from './branch-locations.js';
 import { SOURCES, NORTE_CITIES, fetchSource, calculate, proxyUrl } from './rates.js';
 import { PROVIDERS, REGISTER } from './providers.js';
 import { EXTRA_SOURCES } from './adapters.js';
@@ -5,10 +7,11 @@ import {MORE_SOURCES} from './adapters-extra.js';
 import {createSourceReader} from './source-fetch.js';
 const $ = id => document.getElementById(id);
 const format = value => new Intl.NumberFormat('es-PY', { maximumFractionDigits: 2 }).format(value);
+const differenceLabel = value => value > 0 && value < 0.01 ? 'menos de ₲ 0,01' : `₲ ${format(value)}`;
 const time = value => new Intl.DateTimeFormat('es-PY', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Asuncion' }).format(new Date(value));
 const sources = [...SOURCES.map(source => ({...source,cities:NORTE_CITIES,fetch:(currency,options)=>fetchSource(source,currency,options)})), ...EXTRA_SOURCES, ...MORE_SOURCES];
 let quotes = [], displayedQuotes = [], selectedQuoteKey = '', controller, request = 0;
-const branchLabel = quote => quote.city && quote.branch !== quote.city ? `${quote.branch} · ${quote.city}` : quote.branch || 'Cotización general';
+const branchLabel = quote => quote.city && !quote.branch?.toLocaleLowerCase('es').endsWith(quote.city.toLocaleLowerCase('es')) ? `${quote.branch} · ${quote.city}` : quote.branch || 'Cotización general';
 const quoteKey = quote => quote ? `${quote.sourceId}:${quote.branch}` : ''; 
 const previous = new Map();
 function element(tag, text, className) {
@@ -33,25 +36,61 @@ function renderDirectory() {
     return item;
   }));
 }
+function directions(quote) {
+  const location = branchLocation(quote);
+  const box = element('div', undefined, 'directions');
+  if (location?.address && location.evidenceStatus === 'official-page') {
+    const address=element('details',undefined,'address-details');
+    address.append(element('summary','Dirección'),element('p',location.address,'branch-address'));
+    box.append(address);
+  }
+  const official = location?.officialUrl || PROVIDERS.find(provider=>provider.id===quote.sourceId)?.url || quote.url;
+  box.append(link(location?.mapUrl ? (location.mapKind === 'official-directions-link' ? 'Cómo llegar ↗' : 'Ver mapa ↗') : 'Ver sucursales ↗',location?.mapUrl || official));
+  return box;
+}
+function renderBest(rows) {
+  const operation = $('operation').value;
+  const best = rows[0];
+  $('bestDirections').replaceChildren();
+  $('bestLabel').textContent = operation === 'sell' ? 'Recibís aproximadamente' : 'Pagás aproximadamente';
+  $('bestTotal').textContent = best?.total != null ? `₲ ${format(best.total)}` : '—';
+  const ties = rows.filter(row=>row.best).length;
+  $('bestIdentity').textContent = best ? `${best.quote.sourceName} · ${branchLabel(best.quote)}${ties>1 ? ` · Empate entre ${ties} opciones` : ''}` : 'Sin cotizaciones disponibles para esta selección.';
+  const next = rows.find(row=>!row.best);
+  $('bestExplanation').textContent = !best ? 'Probá otra ciudad o moneda, o consultá las fuentes oficiales.' : best.total === null ? 'Ingresá un importe mayor que cero y de hasta 1 billón para comparar los totales.' : next ? `${operation==='sell' ? 'Recibís' : 'Pagás'} ${differenceLabel(next.difference)} ${operation==='sell' ? 'más' : 'menos'} que con la siguiente cotización distinta.${ties>1 ? ' Las primeras opciones tienen el mismo precio.' : ''}` : ties>1 ? 'Las opciones disponibles tienen el mismo precio.' : 'Solo hay una cotización disponible: todavía no hay otra con la que comparar.';
+  if(best) $('bestDirections').append(directions(best.quote));
+}
 function renderQuotes(items) {
   $('quotes').replaceChildren();
   displayedQuotes = items;
-  const sorted = [...items].sort((a,b) => Number(!!a.stale)-Number(!!b.stale) || ($('operation').value === 'sell' ? b.buy-a.buy : a.sell-b.sell));
-  for (const quote of sorted) {
-    const card = element('article', undefined, `quote${quote.stale ? ' previous' : ''}`);
-    const heading = element('h3'); heading.append(link(quote.sourceName,quote.url));
-    const identity = element('div',undefined,'quote-identity');
-    identity.append(heading, element('p', branchLabel(quote), 'branch'));
-    const prices = element('div', undefined, 'prices');
-    for (const [label, value] of [['Compra', quote.buy], ['Venta', quote.sell]]) {
-      const price = element('div');
-      price.append(element('span', label, 'price-label'), element('span', `₲ ${format(value)}`, 'price-value'));
-      prices.append(price);
-    }
-    card.append(identity, prices, element('p', `${quote.stale ? 'Lectura anterior · ' : ''}Consulta: ${time(quote.retrievedAt)} · Fuente: ${quote.sourceUpdatedLabel || 'sin hora publicada'}`, 'quote-meta'));
-    $('quotes').append(card);
+  const operation = $('operation').value;
+  const amount = $('amount').value === '' ? NaN : Number($('amount').value);
+  const rows = compareQuotes(items,amount,operation);
+  renderBest(rows);
+  if(!items.length) { $('quotes').append(element('p', 'Sin cotizaciones automáticas para esta selección. Consultá las casas de abajo.', 'empty')); return; }
+  const table = element('table',undefined,'comparison-table');
+  const caption = element('caption',`${operation==='sell' ? 'Venta' : 'Compra'} de ${$('currencySelect').value}: totales estimados antes de comisiones.`,'sr-only');
+  const head = element('thead'); const header = element('tr');
+  for (const title of ['Casa / sucursal',operation==='sell' ? 'Recibís' : 'Pagás','Diferencia','Cotización','Ubicación']) {const th=element('th',title); th.scope='col'; header.append(th);}
+  head.append(header);const body=element('tbody');
+  const entries=[...rows,...items.filter(quote=>quote.stale).map(quote=>({quote,total:null,difference:null,best:false}))];
+  for (const row of entries) {
+    const {quote}=row;
+    const tr=element('tr',undefined,`quote${quote.stale ? ' previous' : ''}${row.best ? ' best-row' : ''}`);
+    const identity=element('th',undefined,'quote-identity');identity.scope='row';
+    const heading=element('h3');heading.append(link(quote.sourceName,quote.url));
+    identity.append(heading,element('p',branchLabel(quote),'branch'));
+    if(row.best) identity.append(element('span','Mejor precio','best-badge'));
+    const disclosure=element('details',undefined,'quote-meta');disclosure.append(element('summary',quote.stale ? 'Lectura anterior · Ver fuente' : 'Fuente y hora'),element('p',`Consulta: ${time(quote.retrievedAt)} · Fuente: ${quote.sourceUpdatedLabel || 'sin hora publicada'}`));identity.append(disclosure);
+    const cell=(label,text,cls)=>{const td=element('td',text,cls);td.dataset.label=label;return td;};
+    const total=cell(operation==='sell'?'Recibís':'Pagás',row.total===null ? '—' : `₲ ${format(row.total)}`,'comparison-total');
+    const delta=cell('Diferencia',row.difference===null ? 'No comparable' : row.best ? 'Mejor resultado' : `${differenceLabel(row.difference)} ${operation==='sell' ? 'menos' : 'más'}`,'comparison-delta');
+    const rate=cell(operation==='sell'?'Compra':'Venta',`₲ ${format(operation==='sell'?quote.buy:quote.sell)}`,'comparison-rate');
+    rate.append(element('small',operation==='sell'?'Compra de la casa':'Venta de la casa'));
+    const place=cell('Ubicación',undefined,'comparison-location');place.append(directions(quote));
+    tr.append(identity,total,delta,rate,place);body.append(tr);
   }
-  if (!items.length) $('quotes').append(element('p', 'Sin cotizaciones automáticas para esta selección. Consulta las casas de abajo.', 'empty'));
+  table.append(caption,head,body);$('quotes').append(table);
 }
 function renderCalculator() {
   const currency = $('currencySelect').value;
@@ -86,9 +125,11 @@ async function refresh(force=false) {
   const timeout = setTimeout(() => currentController.abort(), 45000);
   const active = sources.filter(source => !city || source.cities?.includes(city));
   const resultBySource = new Map();
-  quotes=[]; updateOptions(); renderDirectory(); $('quotes').replaceChildren();
+  quotes=[]; updateOptions(); renderDirectory(); renderQuotes([]);
   $('quotes').setAttribute('aria-busy','true'); $('fetchBtn').disabled=true; $('fetchBtn').textContent='Consultando…';
   $('status').className='status'; $('status').textContent=`Consultando ${currency}…`;
+  $('bestIdentity').textContent='Consultando las fuentes de tu selección…';
+  $('bestExplanation').textContent='Los resultados aparecen a medida que responden las fuentes.';
   function showResults() {
     const displayed=[]; quotes=[];
     for (const source of active) {
@@ -139,5 +180,6 @@ $('fetchBtn').addEventListener('click',()=>refresh(true));
 for(const id of ['currencySelect','citySelect']) $(id).addEventListener('change',()=>{ $('manualRate').value=''; selectedQuoteKey=''; refresh(); });
 $('operation').addEventListener('input',()=>{if($('quoteSelect').value==='manual') $('manualRate').value=''; renderQuotes(displayedQuotes);});
 $('quoteSelect').addEventListener('input',()=>{selectedQuoteKey=quoteKey(quotes[Number($('quoteSelect').value)]);});
+$('amount').addEventListener('input',()=>renderQuotes(displayedQuotes));
 for(const id of ['operation','amount','quoteSelect','manualRate']) $(id).addEventListener('input',renderCalculator);
 refresh();
