@@ -3,6 +3,13 @@ import { test as base, expect } from '@playwright/test';
 
 const read = name => readFileSync(new URL(`../fixtures/${name}`, import.meta.url), 'utf8');
 const files = {
+  'www.orientecambios.com.py': 'coverage-oriente.html',
+  'www.maxicambios.com.py': 'coverage-maxi.html',
+  'www.mydcambios.com.py': 'coverage-myd.html',
+  'www.bancoatlas.com.py': 'bank-atlas-2026-10-20.txt',
+  'www.ueno.com.py': 'bank-ueno-2026-10-20.txt',
+  'familiar.com.py': 'bank-familiar-2026-10-20.txt',
+  'www.solar.com.py': 'bank-solar-2026-10-20.txt',
   'www.bonanzacambios.com.py': 'bonanza.txt',
   'www.fortunacambios.com.py': 'fortuna.txt',
   'www.fecambios.com.py': 'fe.txt',
@@ -24,6 +31,12 @@ export const test = base.extend({
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
       if (url.origin === 'http://127.0.0.1:8766') return route.continue();
+      if (url.hostname === 'mascambios.com.py' && url.pathname === '/api/cotizaciones.php') {
+        state.requests.push(url.href);
+        if (state.fail || state.norteOnly || url.searchParams.get('sucursal') !== 'matriz') return route.fulfill({ status:503, body:'Fixture unavailable' });
+        // Only Matriz has a real saved fixture; other branches remain unavailable.
+        return route.fulfill({ status:200, contentType:'application/json', body:read('coverage-mas-matriz.json') });
+      }
       if (url.hostname !== 'r.jina.ai') {
         state.unexpected.push(url.href);
         return route.abort();

@@ -21,6 +21,8 @@ jobs:
       - run: npm run check
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: Verify new public transports in sandboxed browser
+        run: COVERAGE_LIVE=1 npx playwright test coverage-live.spec.js --project=desktop-chromium
       - uses: actions/upload-artifact@v4.6.2
         if: failure()
         with:

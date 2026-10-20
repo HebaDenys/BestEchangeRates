@@ -25,3 +25,13 @@ test('interrupted response body cannot revive pre-refresh cached page',async()=>
  await assert.rejects(createSourceReader({fetcher,force:true}).read(url),/Body interrupted/);
  await assert.rejects(createSourceReader({fetcher}).read(url),/Body interrupted/);assert.equal(calls,3);
 });
+
+test('HTML and markdown representations do not share cached bodies',async()=>{
+ const url='https://example.org/format-cache-test';let calls=0;
+ const fetcher=async(_url,options)=>{calls++;return {ok:true,text:async()=>new Headers(options.headers).get('x-return-format')||'markdown'};};
+ const reader=createSourceReader({fetcher,now:()=>12345});
+ assert.equal(await (await reader.read(url)).text(),'markdown');
+ assert.equal(await (await reader.read(url,{headers:{'X-Return-Format':'html'}})).text(),'html');
+ assert.equal(await (await reader.read(url,{headers:{'x-return-format':'html'}})).text(),'html');
+ assert.equal(calls,2);assert.equal(reader.readings.get(url),12345);
+});

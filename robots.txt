@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hebadenys.github.io/BestEchangeRates/sitemap.xml

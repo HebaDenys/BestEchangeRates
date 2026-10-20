@@ -6,7 +6,7 @@
   "scripts": {
     "test": "node --test tests/*.test.js",
     "start": "python3 -m http.server 8000",
-    "check": "node --check comparison.js && node --check branch-locations.js && node --check rates.js && node --check script.js && node --check providers.js && node --check adapters.js && node --check source-fetch.js && node --check adapters-extra.js && npm test",
+    "check": "node --check comparison.js && node --check branch-locations.js && node --check rates.js && node --check script.js && node --check providers.js && node --check adapters.js && node --check source-fetch.js && node --check adapters-extra.js && node --check adapters-coverage.js && node --check adapters-banks.js && node --check selection.js && node --check bank-providers.js && npm test && node --test ciudades/test.mjs",
     "test:e2e": "playwright test comparison.spec.js",
     "test:e2e:live": "LIVE_SMOKE=1 playwright test live.spec.js --project=desktop-chromium"
   },

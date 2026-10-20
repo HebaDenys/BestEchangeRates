@@ -69,9 +69,12 @@ export const PROVIDERS = [
       "Santa Rita",
       "Ciudad del Este",
       "San Alberto",
-      "Pedro Juan Caballero"
+      "Pedro Juan Caballero",
+      "Nueva Esperanza",
+      "Minga Porá",
+      "Dr. Juan Eulogio Estigarribia"
     ],
-    "citySourceUrl": "https://unocambios.com.py/nosotros"
+    "citySourceUrl": "https://www.unocambios.com.py/sucursales"
   },
   {
     "id": "norte",
@@ -170,9 +173,11 @@ export const PROVIDERS = [
       "Ciudad del Este",
       "Encarnación",
       "Limpio",
-      "Villarrica"
+      "Villarrica",
+      "Mariano Roque Alonso",
+      "Luque"
     ],
-    "citySourceUrl": "https://www.maxicambios.com.py/?trk=organization_guest_main-feed-card-text"
+    "citySourceUrl": "https://www.maxicambios.com.py/"
   },
   {
     "id": "myd",
@@ -202,9 +207,12 @@ export const PROVIDERS = [
     "name": "Oriente Cambios S.A.",
     "url": "https://www.orientecambios.com.py/",
     "cities": [
-      "Ciudad del Este"
+      "Ciudad del Este",
+      "Asunción",
+      "Pedro Juan Caballero",
+      "Encarnación"
     ],
-    "citySourceUrl": "https://www.orientecambios.com.py/contacto"
+    "citySourceUrl": "https://www.orientecambios.com.py/"
   },
   {
     "id": "santarita",
