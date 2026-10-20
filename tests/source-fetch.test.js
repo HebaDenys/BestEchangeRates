@@ -121,3 +121,44 @@ test('parent cancellation promptly aborts an in-flight network attempt',async()=
  await assert.rejects(reader.read('https://example.org/parent-abort',{signal:controller.signal}),{name:'AbortError'});
  assert.equal(seenSignal.aborted,true);assert.equal(reader.readings.size,0);
 });
+
+test('Reader 422 retains bounded JSON diagnostics without retry or a fresh reading',async()=>{
+ const url='https://r.jina.ai/https://example.org/diagnostic-422';let calls=0;
+ const reader=createSourceReader({force:true,fetcher:async()=>{calls++;return new Response(JSON.stringify({name:'AssertionFailureError',code:42202,message:'Failed to goto https://example.org/?token=secret: Error: net::ERR_CONNECTION_RESET',stack:'private stack',headers:{authorization:'secret'}}),{status:422});}});
+ const response=await reader.read(url);
+ assert.equal(response.ok,false);assert.equal(response.status,422);assert.equal(calls,1);assert.equal(reader.readings.size,0);
+ assert.deepEqual(reader.failures.get(url),{status:422,name:'AssertionFailureError',code:'42202',message:'Upstream fetch failed · ERR_CONNECTION_RESET'});
+ assert.doesNotMatch(JSON.stringify([...reader.failures.values()]),/secret|https|stack|authorization/);
+});
+test('diagnostics reject HTML, malformed and oversized JSON and unknown message prose',async()=>{
+ const {readerFailureDetails}=await import('../source-fetch.js');
+ for(const text of ['<html>secret</html>','{','null','[]','x'.repeat(8193)]) assert.equal(readerFailureDetails(text),null);
+ assert.deepEqual(readerFailureDetails(JSON.stringify({error:{name:'SecurityCompromiseError',code:'ACCESS_DENIED',message:'Access denied: secret user@example.com'}})),{name:'SecurityCompromiseError',code:'ACCESS_DENIED',message:'Access/security restriction'});
+ assert.equal(readerFailureDetails(JSON.stringify({name:'<script>secret</script>',code:'private credential value',message:'arbitrary private text'})),null);
+ let cancelled=false;
+ const response=new Response(new ReadableStream({start(c){c.enqueue(new Uint8Array(8193));},cancel(){cancelled=true;}}),{status:422});
+ const reader=createSourceReader({fetcher:async()=>response});
+ assert.equal((await reader.read('https://r.jina.ai/https://example.org/diagnostic-oversize')).status,422);
+ assert.equal(reader.failures.size,0);assert.equal(cancelled,true);
+});
+test('diagnostic errors never read direct endpoints and are cleared after successful Reader recovery',async()=>{
+ let readDirect=false;
+ const direct=createSourceReader({fetcher:async()=>({ok:false,status:422,get body(){readDirect=true;throw Error('must not inspect');}})});
+ assert.equal((await direct.read('https://example.org/private')).status,422);assert.equal(readDirect,false);
+ let calls=0;const url='https://r.jina.ai/https://example.org/diagnostic-recovery';
+ const reader=createSourceReader({force:true,fetcher:async()=>++calls===1 ? new Response('{"name":"AssertionFailureError","message":"Timeout"}',{status:422}) : new Response('recovered')});
+ await reader.read(url);assert.equal(reader.failures.size,1);await reader.read(url);assert.equal(reader.failures.size,0);
+});
+test('error-body diagnostics stay within attempt timeout and do not publish late state',async()=>{
+ let release;
+ const response=new Response(new ReadableStream({start(c){release=()=>{c.enqueue(new TextEncoder().encode('{"name":"AssertionFailureError"}'));c.close();};}}),{status:422});
+ const reader=createSourceReader({attemptTimeoutMs:10,fetcher:async()=>response});
+ await assert.rejects(reader.read('https://r.jina.ai/https://example.org/diagnostic-stall'),{name:'TimeoutError'});
+ release();await new Promise(r=>setTimeout(r,0));assert.equal(reader.failures.size,0);assert.equal(reader.readings.size,0);
+});
+test('429 JSON diagnostic capture preserves a single retry and clears recovered failure',async()=>{
+ let calls=0,waits=0;
+ const reader=createSourceReader({force:true,wait:async()=>{waits++;},fetcher:async()=>++calls===1 ? new Response('{"name":"RateLimitError","message":"Too many requests"}',{status:429,headers:{'Retry-After':'0'}}) : new Response('fresh')});
+ const response=await reader.read('https://r.jina.ai/https://example.org/diagnostic-retry');
+ assert.equal(response.ok,true);assert.equal(calls,2);assert.equal(waits,1);assert.equal(reader.failures.size,0);
+});

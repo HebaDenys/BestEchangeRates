@@ -1,4 +1,4 @@
-import {bankLocationsForInstitution} from './bank-locations.js?v=20261020-4';
+import {bankLocationsForInstitution} from './bank-locations.js?v=20261020-5';
 // Institution inventory, not a list of working feeds or verified local branches.
 // BCP register checked 2026-10-20; Banco do Brasil has no verified local website here.
 export const BANK_REGISTER={url:'https://www.bcp.gov.py/documents/20117/319021/20260320%2BLISTADO%2BDE%2BENTIDADES%2BSUPERVISADAS.pdf/72d9cd46-9945-f2d2-b40a-d2d5fb34345d?t=1780412378396',date:'2026-03-20',label:'Bancos supervisados por el BCP'};

@@ -443,3 +443,17 @@ test('Reader 429 retries once, recovers normally and stops after a second rate l
   await expect(page.locator('#sourceDiagnostics')).toContainText('HTTP 429');
   await expect(page.locator('#sourceDiagnostics')).not.toContainText('Fixture rate limit');
 });
+
+test('collapsed source details expose safe Reader failure causes, not raw error prose',async({page,sources})=>{
+ await page.route('https://r.jina.ai/https://www.bancoatlas.com.py/web',route=>route.fulfill({status:422,contentType:'application/json',body:JSON.stringify({name:'AssertionFailureError',code:42202,message:'Failed to goto https://bank.invalid/?token=SECRET: Error: net::ERR_CONNECTION_RESET',stack:'PRIVATE STACK'})}));
+ await open(page);
+ const details=page.locator('#sourceDiagnostics');
+ await expect(details).not.toHaveAttribute('open','');
+ await details.locator('summary').click();
+ await expect(details).toContainText('Banco Atlas');
+ await expect(details).toContainText('HTTP 422');
+ await expect(details).toContainText('AssertionFailureError · 42202 · Upstream fetch failed · ERR_CONNECTION_RESET');
+ await expect(details).not.toContainText('SECRET');await expect(details).not.toContainText('PRIVATE STACK');
+ await expect(details).not.toContainText('bank.invalid');
+ await expect(page.locator('#bankQuotes .quote').filter({hasText:'Banco Atlas'})).toHaveCount(0);
+});

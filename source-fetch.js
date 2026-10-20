@@ -16,8 +16,51 @@ export function waitForRetry(ms,{signal}={}) {
     signal?.addEventListener('abort',cancel,{once:true});
   });
 }
+// Only diagnostic JSON from the public Reader API is inspected. Never retain raw bodies,
+// URLs, headers, stack traces or arbitrary remote prose in UI-visible state.
+export function readerFailureDetails(text) {
+  if(typeof text!=='string' || text.length>8192) return null;
+  let data;try {data=JSON.parse(text);} catch {return null;}
+  if(!data || typeof data!=='object' || Array.isArray(data)) return null;
+  const nested=data.error && typeof data.error==='object' ? data.error : {};
+  const result={};
+  for(const key of ['name','code']) {
+    const value=data[key] ?? nested[key];
+    if(typeof value==='string' && /^[A-Za-z][A-Za-z0-9_.]{0,63}$/.test(value)) result[key]=value;
+    else if(key==='code' && Number.isSafeInteger(value) && value>=0 && value<=999999) result[key]=String(value);
+  }
+  const message=data.message ?? nested.message;
+  if(typeof message==='string') {
+    // A fixed vocabulary preserves actionable causes without copying unknown prose/secrets.
+    const reasons=[];
+    if(/failed to (?:goto|navigate|fetch)|failed fetching/i.test(message)) reasons.push('Upstream fetch failed');
+    const network=message.match(/\b(?:net::)?(ERR_[A-Z_]{2,50})\b/);if(network) reasons.push(network[1]);
+    if(/timed? ?out|timeout/i.test(message)) reasons.push('Timeout');
+    if(/certificate|\bTLS\b|\bSSL\b/i.test(message)) reasons.push('TLS/certificate error');
+    if(/access denied|forbidden|security|blocked|captcha|verify.{0,20}human|bot detection/i.test(message)) reasons.push('Access/security restriction');
+    if(/rate limit|too many requests/i.test(message)) reasons.push('Rate limit');
+    if(/no meaningful content|could not extract/i.test(message)) reasons.push('Content extraction failed');
+    if(/redirect/i.test(message)) reasons.push('Redirect error');
+    const status=message.match(/\b(?:HTTP|status(?: code)?)[: ]+([1-5]\d{2})\b/i);if(status) reasons.push(`Upstream HTTP ${status[1]}`);
+    if(reasons.length) result.message=[...new Set(reasons)].join(' · ').slice(0,200);
+  }
+  return Object.keys(result).length ? result : null;
+}
+async function readReaderFailure(response) {
+  // A small streamed cap prevents large HTML/error pages from being buffered.
+  if(!response.body?.getReader) return null;
+  const stream=response.body.getReader(),decoder=new TextDecoder();let text='',size=0;
+  try {
+    while(true) {
+      const {done,value}=await stream.read();if(done) break;
+      size+=value.byteLength;if(size>8192) {void stream.cancel().catch(()=>{});return null;}
+      text+=decoder.decode(value,{stream:true});
+    }
+    text+=decoder.decode();return readerFailureDetails(text);
+  } catch {return null;} finally {stream.releaseLock();}
+}
 export function createSourceReader({fetcher=fetch, now=Date.now, ttl=60000, force=false,wait=waitForRetry,attemptTimeoutMs=25000,maxRetryDelayMs=60000}={}) {
-  const readings=new Map();
+  const readings=new Map(),failures=new Map();
   const read=async(url,options={})=>{
     if(options.signal?.aborted) throw new DOMException('Aborted','AbortError');
     const headers=new Headers(options.headers);
@@ -50,31 +93,33 @@ export function createSourceReader({fetcher=fetch, now=Date.now, ttl=60000, forc
             if(controller.signal.aborted) throw abortError();
             const response=await fetcher(url,{...options,signal:controller.signal});
             const body=response.ok ? await response.text() : null;
-            return {response,body};
+            const failure=!response.ok && isReader ? await readReaderFailure(response) : null;
+            return {response,body,failure};
           })()]);
         } finally {clearTimeout(timer);options.signal?.removeEventListener('abort',cancel);}
       };
-      let response,body;
+      let response,body,failure;
       try {
-        ({response,body}=await attempt());
+        ({response,body,failure}=await attempt());
         // Only Reader rate limits are retried. Never retry denial (403), timeout or other failures.
         if(isReader && response.status===429) {
           const delay=retryAfterDelay(response.headers?.get?.('retry-after'),now(),maxRetryDelayMs);
           if(delay!==null) {
             await wait(delay,{signal:options.signal});
             if(options.signal?.aborted) throw abortError();
-            ({response,body}=await attempt());
+            ({response,body,failure}=await attempt());
           }
         }
       } catch(error) { if(!options.signal?.aborted) cache.delete(cacheKey);throw error; }
-      if(!response.ok) { cache.delete(cacheKey);return response; }
+      if(!response.ok) { cache.delete(cacheKey);if(failure) failures.set(url,{status:response.status,...failure});else failures.delete(url);return response; }
       if(options.signal?.aborted) throw abortError();
       item={body,fetchedAt:now()};cache.set(cacheKey,item);
     }
+    failures.delete(url);
     readings.set(url,item.fetchedAt);
     return {ok:true,status:200,text:async()=>item.body};
   };
-  return {read,readings};
+  return {read,readings,failures};
 }
 
 // Fixed display vocabulary: never expose arbitrary remote response/error text in the UI.
