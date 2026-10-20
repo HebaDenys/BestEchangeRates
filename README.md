@@ -12,7 +12,20 @@ npm run check
 npm start
 ```
 
-Open http://localhost:8000. Optional Playwright browser regression: `node tests/browser.cjs` with `BROWSER_EXECUTABLE` if using system Chromium. Fixtures are historical test data, never production fallback quotes.
+Open http://localhost:8000. Fixtures are historical test data, never production fallback quotes.
+
+### Real-browser E2E
+
+```sh
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+Playwright starts a separate HTTP server on 127.0.0.1:8766 and runs 18 Chromium tests (nine journeys on desktop and mobile), using the real app modules and browser events. The browser sandbox stays enabled. A restricted executor that cannot launch sandboxed Chromium must use a supported runner, not disable browser or OS security. The GitHub Actions workflow runs the unit/JSDOM checks and real-browser suite separately with read-only repository permissions; failure screenshots/traces are retained for seven days.
+
+The deterministic suite intercepts every provider request, so CI never hits live rate providers. It exercises all 12 adapters, four currencies, city isolation, buy/sell sorting, ties, tiny differences, invalid/fractional/large amounts, manual references, cache and forced refresh, previous readings, failures/recovery, request races, keyboard controls, official-link safety and 320px layouts. Date alone is fixed to the fixture capture period; timers are real. Alberdi branch variants are explicitly synthetic routing fixtures, not evidence of real branch prices. No mocked rate becomes a production fallback.
+
+Optional bounded published-site smoke: `npm run test:e2e:live`. This performs one initial Asunción lookup, checks that loading settles without JavaScript errors and accepts an honestly displayed provider outage. It does not assert that current rates equal historical fixtures. Local browser reports are in `playwright-report/` (ignored by git).
 
 ## Coverage and data
 
