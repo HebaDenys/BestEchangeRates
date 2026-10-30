@@ -458,7 +458,7 @@ test('collapsed source details expose safe Reader failure causes, not raw error 
  await expect(page.locator('#bankQuotes .quote').filter({hasText:'Banco Atlas'})).toHaveCount(0);
 });
 
-test('inactive sponsorship stays empty and information pages preserve navigation', async ({ page }, testInfo) => {
+test('inactive sponsorship stays empty and information pages preserve navigation', async ({ page, sources }, testInfo) => {
   await open(page);
   await expect(page.locator('#sponsorship')).toBeHidden();
   await expect(page.locator('#sponsorship')).toBeEmpty();
