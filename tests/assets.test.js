@@ -26,7 +26,7 @@ function checkAsset(reference, parent) {
 
 test('HTML and complete application module graph use one existing release of every asset', () => {
   assert.match(ASSET_RELEASE, /^[a-zA-Z0-9._-]+$/);
-  const pages = ['index.html', ...readdirSync(new URL('ciudades/', root)).filter(name => name.endsWith('.html')).map(name => `ciudades/${name}`)];
+  const pages = ['index.html', 'ayuda.html', 'transparencia.html', 'privacidad.html', 'contacto.html', ...readdirSync(new URL('ciudades/', root)).filter(name => name.endsWith('.html')).map(name => `ciudades/${name}`)];
   for (const page of pages) {
     const url = new URL(page, root);
     const dom = new JSDOM(read(url));

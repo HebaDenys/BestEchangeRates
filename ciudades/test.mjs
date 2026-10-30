@@ -41,6 +41,6 @@ for(const file of readdirSync(root+'ciudades').filter(file=>file.endsWith('.html
 test('sitemap includes only real canonical pages',()=>{
  const xml=new JSDOM(readFileSync(root+'sitemap.xml','utf8'),{contentType:'application/xml'}).window.document;
  const urls=[...xml.querySelectorAll('loc')].map(loc=>loc.textContent);
- assert.equal(urls.length,5);assert.equal(new Set(urls).size,5);
+ assert.equal(urls.length,9);assert.equal(new Set(urls).size,9);
  for(const url of urls){assert.ok(url.startsWith(base));const relative=url.slice(base.length);const target=resolve(root,relative.endsWith('/')||!relative?relative+'index.html':relative);assert.ok(existsSync(target));}
 });

@@ -78,3 +78,14 @@ Reader requests set documented X-Cache-Tolerance:60; Actualizar adds X-No-Cache:
 Application JS/CSS references use a consistent version token from asset-release.mjs. Bump the token in all browser imports and HTML entry references for each JS/CSS release; regenerate city guides and run the asset-graph regression before publishing.
 
 Reader HTTP429 has at most one abortable retry, respecting Retry-After up to60seconds (60seconds if absent). Excessive/malformed delays, a second429, HTTP403 and network timeouts remain visible failures. The network/body timeout is separate from the retry wait; no denial is bypassed and no alternate route is attempted.
+
+## Monetization readiness (inactive)
+
+Four static information pages cover practical comparison help, editorial transparency,
+privacy and public contact. Include these root HTML pages in production assets.
+The independent `sponsorship.js` entry and `sponsorship-config.js` must also be deployed.
+The configuration is OFF with no campaign/approved origin; the hidden slot takes no
+space and makes no network calls. GitHub Pages hosts are additionally blocked.
+See `monetization.md` for approval/hosting/privacy prerequisites. This is not an ad
+network integration, publisher approval, or a revenue forecast. Run `npm run check`
+and `npm run test:e2e` after changes; never enable a sample campaign in production.

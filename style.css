@@ -19,3 +19,9 @@
 @media(max-width:700px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.filters button{grid-column:auto}.bank-panel>.hint{margin:10px 6px 14px}.share-controls{gap:0 12px}}
 
 .best-summary #bestFreshness{color:#d9e9df;line-height:1.45}
+
+/* A real approved sponsor is separate from all comparison controls/results. */
+.sponsorship:not([hidden]) { margin-top: 2rem; border: 1px solid var(--line, #d7e2dc); border-radius: 12px; padding: 1.25rem; background: #f5f6f3; overflow-wrap: anywhere; }
+.sponsorship p { margin: 0 0 .7rem; }
+.sponsorship .hint { margin-top: .8rem; margin-bottom: 0; }
+footer nav { margin-bottom: .8rem; line-height: 2; }

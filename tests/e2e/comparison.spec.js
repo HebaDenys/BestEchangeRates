@@ -457,3 +457,20 @@ test('collapsed source details expose safe Reader failure causes, not raw error 
  await expect(details).not.toContainText('bank.invalid');
  await expect(page.locator('#bankQuotes .quote').filter({hasText:'Banco Atlas'})).toHaveCount(0);
 });
+
+test('inactive sponsorship stays empty and information pages preserve navigation', async ({ page }, testInfo) => {
+  await open(page);
+  await expect(page.locator('#sponsorship')).toBeHidden();
+  await expect(page.locator('#sponsorship')).toBeEmpty();
+  await verifyRanking(page, 'sell');
+  await page.screenshot({path:testInfo.outputPath('comparison-sponsor-off.png'),fullPage:true});
+  for (const [label, path] of [['Cómo comparar', 'ayuda.html'], ['Transparencia', 'transparencia.html'], ['Privacidad', 'privacidad.html'], ['Contacto', 'contacto.html']]) {
+    await page.locator('footer').getByRole('link', {name:label, exact:true}).click();
+    await expect(page).toHaveURL(new RegExp(`${path}$`));
+    await expect(page.locator('h1')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({path:testInfo.outputPath(path.replace('.html','.png')),fullPage:true});
+    await page.goBack();
+    await expect(page.locator('#amount')).toBeVisible();
+  }
+});

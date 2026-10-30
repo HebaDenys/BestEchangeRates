@@ -71,3 +71,40 @@ inventadas. En GitHub Pages de proyecto, el `robots.txt` de este repositorio que
 `/BestEchangeRates/robots.txt`, no en la raíz del dominio; no controla el rastreo del host.
 Para descubrimiento se puede enviar el sitemap real a la herramienta de buscadores
 que el propietario autorice, sin afirmar que se haya enviado o indexado.
+
+## Preparación técnica (30 de octubre de 2026)
+
+`sponsorship-config.js` contiene `enabled: false`, ningún origen aprobado y ninguna
+campaña. `sponsorship.js` muestra únicamente texto y un enlace HTTPS, sin imágenes,
+solicitudes, cookies o medición. El espacio está oculto y vacío cuando no hay campaña
+válida. No lee selecciones ni importa el ranking; utiliza `textContent`, etiqueta
+«Publicidad», identifica al anunciante y aplica `rel="sponsored noopener noreferrer"`
+y `referrerpolicy="no-referrer"`. Rechaza credenciales, consultas y fragmentos en el
+destino. Una campaña debe tener `advertiser`, `message`, `linkLabel`, `url`,
+`startsAt` y `endsAt` (instantes UTC `YYYY-MM-DDTHH:mm:ssZ`); solo aparece en un
+origen expresamente aprobado y durante ese intervalo al cargar la página.
+
+Existe un bloqueo adicional para `github.io`: este despliegue sigue siendo
+informativo. Antes de operar comercialmente, el propietario debe aprobar un hosting
+compatible y revisar sus condiciones. No se ha migrado el sitio. Las condiciones de
+[GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)
+no permiten usarlo para operar un negocio online; no asumir que preparar una ranura
+publicitaria equivale a autorización de explotación comercial.
+
+Para activar: confirmar host y origen final, acuerdo y anunciante reales, texto y
+URL revisados, fechas de campaña y autorización expresa del propietario; actualizar
+los avisos públicos de ausencia de anuncios. La activación es un cambio de código
+revisado, no un parámetro de URL o almacenamiento del visitante. No hay cuenta
+AdSense, ID, integración de red ni `ads.txt` ficticio. Si se elige una red, revisar
+sus [políticas de contenido](https://support.google.com/publisherpolicies/answer/11190248),
+[ubicación](https://support.google.com/adsense/answer/1346295),
+[privacidad](https://support.google.com/publisherpolicies/answer/10437794) y
+[consentimiento](https://support.google.com/adsense/answer/13554116), además de las
+condiciones de las fuentes. Una red requiere otro proyecto de integración: esta
+ranura estática no carga anuncios de red ni sustituye una CMP certificada.
+
+Las páginas `ayuda.html`, `transparencia.html`, `privacidad.html` y `contacto.html`
+aportan ayuda original y rutas públicas de corrección sin inventar empresa, correo,
+tráfico o aprobación editorial. El canal actual de contacto es GitHub Issues,
+público y con cuenta GitHub; no sirve para enviar información sensible. Completar
+identidad y contacto privado reales con datos aprobados antes de acuerdos comerciales.
